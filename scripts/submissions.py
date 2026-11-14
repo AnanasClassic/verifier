@@ -224,9 +224,10 @@ HIGHER = {'dft', 'heilbronn-triangle', '3sat'}
 # Prime gaps opened on 2026-11-07 (verifier #148) after its smoke (run 42305726764, issue #172, darkhipo's Bound 246
 # proof at 2d44726) passed and its control and five statement mutations were refused (runs 42292994745, 42295113989,
 # 42296539519, 42297912639, 42299387647, 42300560394).
-# 3-SAT (task 07840cc3, verifier #192) stays closed until its maintainer smoke on the check chain passes and its
-# control and statement mutations are refused.
-CLOSED = {'3sat'}
+# 3-SAT (task 07840cc3, verifier #192) opened on 2026-11-15 after its maintainer smoke passed on the check chain
+# (#195, run 43624031679), its control and m1-m5 were refused at the axiom audit (sorryAx; #196-#201) and m6 and m7
+# were refused at the compare (statement_mismatch; #202 run 43653959573, #203 run 43654809086).
+CLOSED = set()
 
 
 def form_error(body):

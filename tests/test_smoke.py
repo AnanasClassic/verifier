@@ -454,7 +454,7 @@ class ThreeSatSmokeTests(SubsetSumSmokeTests):
                           '3sat-m5-clause-667994f-v1':('1/2','667994f'),'3sat-m6-def-523fb6e-v1':('1/2','523fb6e'),
                           '3sat-m7-type-22c4657-v1':('1/2','22c4657')})
         self.assertTrue(set(self.TAGS.items())<=set(smoke.SILENT.items()))
-        self.assertIn('3sat',s.CLOSED)
+        self.assertNotIn('3sat',s.CLOSED)
 
     def test_dispatch_selects_one_silent_issue_entry(self):
         for tag,pinned in self.TAGS.items():

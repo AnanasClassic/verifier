@@ -60,8 +60,8 @@ class ProfileTests(unittest.TestCase):
         v.check_chain_profile(PROFILE, {'lean_toolchain': PROFILE['lean_toolchain']})
         self.assertEqual(v.build_roots(PROFILE), ['OAI', 'Submission'])
 
-    def test_closed_until_the_smoke_passes(self):
-        self.assertIn('3sat', s.CLOSED)
+    def test_open_after_the_smoke_passed(self):
+        self.assertNotIn('3sat', s.CLOSED)
         self.assertEqual(s.MODEL_IDS['3sat'], '3sat/randomized-bit-model')
         self.assertIn('3sat', s.HIGHER)
         self.assertNotIn('3sat', s.OTHER)

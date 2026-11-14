@@ -353,7 +353,7 @@ They post nothing. Read the receipts.
 
 ### 3-SAT runs (maintainers only)
 
-3-SAT stays closed (`submissions.CLOSED`) until these runs pass, all on our own
+3-SAT stayed closed (`submissions.CLOSED`) until these runs passed, all on our own
 repository `https://github.com/bigospeedrun/verifier-smoke-3sat` (OpenAI's
 `exact_count_and_sat` at openai/math `7ef5c0cc`: 3091 byte copies under `OAI/`,
 with our bridge under `Submission/`), one test issue per entry, as for Snaky.
@@ -378,6 +378,13 @@ The profile runs on the check chain (`runner` `github-chain`):
   `Race.bound` that states `True` (`22c4657`).
 
 They post nothing. Read the receipts.
+
+3-SAT opened on 2026-11-15, on verifier `1c83d79` and `90989c8`: the smoke
+passed (#195, run 43624031679: Lean kernel check in 5 segments, standard
+axioms); the control and m1-m5 were refused at the axiom audit on `sorryAx`
+(#196-#201, runs 43647680751, 43648774339, 43649844999, 43650818185,
+43651996260, 43652807015); m6 and m7 were refused at the compare with
+`statement_mismatch` (#202, run 43653959573; #203, run 43654809086).
 
 ### Known limits
 
