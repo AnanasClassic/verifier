@@ -109,9 +109,9 @@ PG_MUTATIONS = {
 # memory measurement of the chain on free runners: Race.bound for 1/2 from OpenAI's exact_count_and_sat (openai/math
 # 7ef5c0cc, the 3091 files of the import closure of OAI.Algorithms.SubexponentialSAT.Main, byte copies under OAI/) and
 # our bridge under Submission/ (branch main). The control (the statement over a copy of OpenAI's definitions,
-# Race.bound by sorry) must fail on sorryAx. Each mutation must fail at Comparator's compare step
-# (statement_mismatch): the bound 3/5 for the theorem about 1/2, width 2 for 3, a one-sided verdict (→ for ↔), one
-# machine per ε, and Clause.eval with ∀ for ∃ (a changed OpenAI definition).
+# Race.bound by sorry) must fail on sorryAx. Mutations m1-m5 (Race.bound by sorry) must be refused: the bound 3/5 for
+# the theorem about 1/2, width 2 for 3, a one-sided verdict (→ for ↔), one machine per ε, and Clause.eval with ∀ for ∃
+# (a changed OpenAI definition).
 # On the chain the axiom audit runs before the compare (chain.export: no segment 0 without a passed audit), so m1-m5,
 # which prove Race.bound by sorry, stop at the audit on sorryAx (runs 43648774339 and after, 2026-11-14). m6 and m7 have
 # no sorry and must fail at the compare: m6 redefines SolvedInTime as True (Race.bound by trivial), m7 states
