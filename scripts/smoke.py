@@ -112,6 +112,10 @@ PG_MUTATIONS = {
 # Race.bound by sorry) must fail on sorryAx. Each mutation must fail at Comparator's compare step
 # (statement_mismatch): the bound 3/5 for the theorem about 1/2, width 2 for 3, a one-sided verdict (→ for ↔), one
 # machine per ε, and Clause.eval with ∀ for ∃ (a changed OpenAI definition).
+# On the chain the axiom audit runs before the compare (chain.export: no segment 0 without a passed audit), so m1-m5,
+# which prove Race.bound by sorry, stop at the audit on sorryAx (runs 43648774339 and after, 2026-11-14). m6 and m7 have
+# no sorry and must fail at the compare: m6 redefines SolvedInTime as True (Race.bound by trivial), m7 states
+# Race.bound : True (by Classical.em, so that the audit reports the standard axioms).
 SAT_REPO = 'https://github.com/bigospeedrun/verifier-smoke-3sat'
 SAT_CONTROL = 'a11e20677fe5c49d4d41ff5498c813c45fd80b96'
 SAT_FIXTURE = ('3sat', '1/2', SAT_REPO, 'f76c9973f68108afbd0a24e50512d0cb0370fe77')
@@ -123,6 +127,9 @@ SAT_MUTATIONS = {
     '3sat-m3-verdict-2639f4c-v1': ('3sat', '1/2', SAT_REPO, '2639f4c80640d30fd13510b46628fd6042230304'),
     '3sat-m4-uniform-1872c8e-v1': ('3sat', '1/2', SAT_REPO, '1872c8e1845e54d2f0c8f3a1a617b3bf7b7f26b3'),
     '3sat-m5-clause-667994f-v1': ('3sat', '1/2', SAT_REPO, '667994fa617c12dd3a1807d2b00b44cce3157c9d'),
+    # Without sorry, so the axiom audit passes and the chain reaches the compare in segment 0 (see above).
+    '3sat-m6-def-523fb6e-v1': ('3sat', '1/2', SAT_REPO, '523fb6e3883fa854567493046c86d64e8566780d'),
+    '3sat-m7-type-22c4657-v1': ('3sat', '1/2', SAT_REPO, '22c4657978982c69cf13a39b14ee942e4a584065'),
 }
 # Smokes that post nothing and run only on a maintainer test issue.
 SILENT = {CATALAN_TAG: CATALAN_FIXTURE, SS_TAG: SS_FIXTURE, SNAKY_TAG: SNAKY_FIXTURE, **SNAKY_MUTATIONS,

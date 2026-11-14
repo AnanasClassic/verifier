@@ -367,11 +367,15 @@ The profile runs on the check chain (`runner` `github-chain`):
   its 15 GB memory limit; with 3 it finished;
 - the control (`a11e206`, bound `1/2`, the statement over a copy of OpenAI's
   definitions and `sorry`) must fail on the axiom check (`sorryAx`);
-- each mutation (`smoke.SAT_MUTATIONS`) must end with the Lean reason
-  `statement_mismatch`: the bound `3/5` for the theorem about `1/2`
-  (`a11e206`), width 2 for 3 (`e92f108`), `→` for `↔` in the verdict
-  (`2639f4c`), one machine per `ε` (`1872c8e`), and `∀` for `∃` in OpenAI's
-  `Clause.eval` (`667994f`).
+- each mutation with `sorry` (`smoke.SAT_MUTATIONS`) must be refused: the
+  bound `3/5` for the theorem about `1/2` (`a11e206`), width 2 for 3
+  (`e92f108`), `→` for `↔` in the verdict (`2639f4c`), one machine per `ε`
+  (`1872c8e`), and `∀` for `∃` in OpenAI's `Clause.eval` (`667994f`). On the
+  chain the axiom audit runs before Comparator's compare, so these stop on
+  `sorryAx` and do not reach the compare;
+- each mutation without `sorry` must end with the Lean reason
+  `statement_mismatch`: `SolvedInTime` redefined as `True` (`523fb6e`), and
+  `Race.bound` that states `True` (`22c4657`).
 
 They post nothing. Read the receipts.
 

@@ -451,7 +451,8 @@ class ThreeSatSmokeTests(SubsetSumSmokeTests):
                          {'3sat-f76c997-v1':('1/2','f76c997'),'3sat-control-a11e206-v1':('1/2','a11e206'),
                           '3sat-m1-bound3-5-a11e206-v1':('3/5','a11e206'),'3sat-m2-width-e92f108-v1':('1/2','e92f108'),
                           '3sat-m3-verdict-2639f4c-v1':('1/2','2639f4c'),'3sat-m4-uniform-1872c8e-v1':('1/2','1872c8e'),
-                          '3sat-m5-clause-667994f-v1':('1/2','667994f')})
+                          '3sat-m5-clause-667994f-v1':('1/2','667994f'),'3sat-m6-def-523fb6e-v1':('1/2','523fb6e'),
+                          '3sat-m7-type-22c4657-v1':('1/2','22c4657')})
         self.assertTrue(set(self.TAGS.items())<=set(smoke.SILENT.items()))
         self.assertIn('3sat',s.CLOSED)
 
