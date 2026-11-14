@@ -899,6 +899,11 @@ def build_allowed(rel, is_dir, roots):
     parts = rel.split('/')
     if '\0' in rel or any(x in ['', '.', '..'] for x in parts):
         return False
+    # Lake's <module>.setup.json is the input file of a lean call, written again at each rebuild; the up-to-date check
+    # does not read it (Lake src/lake/Lake/Build/Module.lean, v4.34.1:989 and v4.33.1:977, only in Module.buildLean). It holds the
+    # absolute path of every transitive import: 21.2 GB of the 25.1 GB 3-SAT pack (run 43624031679). Never packed.
+    if not is_dir and parts[-1].endswith('.setup.json'):
+        return False
     if parts[:2] == ['lib', 'lean'] and len(parts) > 2:
         rest = parts[2:]
     elif parts[0] == 'ir' and len(parts) > 1:

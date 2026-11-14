@@ -184,6 +184,11 @@ for each source root R of the profile and its solution dependencies:
 `lib/lean/R.<ext>`, `lib/lean/R/…`, `ir/R.<ext>` and `ir/R/…`. Nothing else:
 no `VerifierChallenge*`, no `VerifierAudit*`, no `Mathlib/…`, no other folder.
 A source root cannot be `Init`, `Std`, `Lean`, `Lake` or `Verifier*`.
+The pack never holds a `*.setup.json` file. Lake writes it as the input of a
+`lean` call and writes it again at each rebuild. The up-to-date check does not
+read it (Lake v4.34.1 and v4.33.1, `Module.buildLean`). It holds the absolute path of each
+transitive import. In the 3-SAT smoke (run 43624031679) these files were 21.2 GB
+of the 25.1 GB pack, and the export job had 8.2 GB of free disk.
 
 ### Why the restore is safe: the LEAN_PATH order
 

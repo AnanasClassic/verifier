@@ -112,7 +112,10 @@ class AllowListTests(unittest.TestCase):
                             ('lib/lean/Submission/A\0.olean', False), ('', False),
                             # Shared libraries: Lake puts .lake/build/lib on LD_LIBRARY_PATH (docs/execution.md).
                             ('lib/libleanshared.so', False), ('lib/lean/libleanshared.so', False), ('lib/lean/libc.so.6', False),
-                            ('lib/libc.so.6', False), ('lib/lean/Submission/../x', False), ('lib/lean/Submission/../libc.so.6', False)]:
+                            ('lib/libc.so.6', False), ('lib/lean/Submission/../x', False), ('lib/lean/Submission/../libc.so.6', False),
+                            # Lake's lean input file: not a build output (verifier.build_allowed).
+                            ('ir/Submission.setup.json', False), ('ir/Submission/OAI/A.setup.json', False),
+                            ('lib/lean/Submission/A.setup.json', False)]:
             with self.subTest(rel=rel, is_dir=is_dir):
                 self.assertFalse(v.build_allowed(rel, is_dir, ROOTS))
 
@@ -223,6 +226,17 @@ class Base(unittest.TestCase):
 
 
 class PackTests(Base):
+    def test_pack_leaves_out_the_lake_setup_files(self):
+        self.put('lib/lean/Submission/OAI/A.olean', b'a')
+        self.put('ir/Submission/OAI/A.c', b'c')
+        self.put('ir/Submission/OAI/A.setup.json', b'{}' * 1000)
+        record = self.pack()
+        with tarfile.open(fileobj=io.BytesIO(self.tar_bytes())) as tar:
+            names = [m.name for m in tar.getmembers()]
+        self.assertNotIn('ir/Submission/OAI/A.setup.json', names)
+        self.assertIn('ir/Submission/OAI/A.c', names)
+        self.assertEqual((record['files'], record['bytes'], record['skipped_first']), (2, 2, ['ir/Submission/OAI/A.setup.json']))
+
     def test_pack_keeps_only_the_allow_list_and_never_follows_a_symlink(self):
         self.put('lib/lean/Submission.olean', b'root')
         self.put('lib/lean/Submission/OAI/A.olean', b'a' * 3000)
