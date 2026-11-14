@@ -966,7 +966,7 @@ def pack():
     base = WORK / 'stage/.lake/build'
     if not stat.S_ISDIR(os.lstat(base).st_mode):
         raise RuntimeError('build folder is not a directory')
-    members, skipped, total = [], [], 0
+    members, skipped, total, setup_files = [], [], 0, 0
     for top, dirs, files in os.walk(base, followlinks=False):
         prefix = os.path.relpath(top, base)
         keep = []
@@ -981,6 +981,8 @@ def pack():
                 total += 0 if is_dir else st.st_size
                 if is_dir:
                     keep.append(name)
+            elif not is_dir and name.endswith('.setup.json'):
+                setup_files += 1  # Counted apart, so that skipped_first still shows an unexpected file.
             else:
                 skipped.append(rel)
         dirs[:] = [d for d in dirs if d in keep]
@@ -1006,7 +1008,7 @@ def pack():
     data = receipt()
     data['pack'] = {'sha256': sha, 'members': len(members), 'files': sum(not stat.S_ISDIR(m[1].st_mode) for m in members),
                     'bytes': total, 'compressed_bytes': target.stat().st_size,
-                    'skipped_count': len(skipped), 'skipped_first': sorted(skipped)[:20]}
+                    'skipped_count': len(skipped), 'skipped_first': sorted(skipped)[:20], 'setup_json_skipped': setup_files}
     save(data)
     # The record and the log are pinned too (Lead, 2026-11-14): build.json holds the log's sha256, and its own sha256
     # goes to the job output build_record_sha256. unpack checks both before it reads them.

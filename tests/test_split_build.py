@@ -235,7 +235,8 @@ class PackTests(Base):
             names = [m.name for m in tar.getmembers()]
         self.assertNotIn('ir/Submission/OAI/A.setup.json', names)
         self.assertIn('ir/Submission/OAI/A.c', names)
-        self.assertEqual((record['files'], record['bytes'], record['skipped_first']), (2, 2, ['ir/Submission/OAI/A.setup.json']))
+        self.assertEqual((record['files'], record['bytes'], record['skipped_count'], record['skipped_first'], record['setup_json_skipped']),
+                         (2, 2, 0, [], 1))
 
     def test_pack_keeps_only_the_allow_list_and_never_follows_a_symlink(self):
         self.put('lib/lean/Submission.olean', b'root')
