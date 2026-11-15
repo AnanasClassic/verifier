@@ -251,7 +251,6 @@ file type is staged.
 
 ## 3-SAT
 
-Not open yet: the maintainer smoke on the check chain runs first (task 07840cc3, verifier #192).
 Issue route only. It runs on the check chain (`runner` `github-chain`: up to four build jobs,
 then the kernel check in up to five segments). Use Lean `leanprover/lean4:v4.34.1` and the
 Mathlib pin in `profiles/lake-manifest.json`. The trusted statement is
