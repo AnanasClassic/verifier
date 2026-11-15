@@ -31,8 +31,8 @@ each integer (300 for `heilbronn-triangle`). For DFT, the bound is the
 saving s in O(n (log n)^(1-s)); a larger saving is better. For 3SUM and APSP, it is
 the exponent r in O(n^r); smaller is better. For Subset Sum, it is the exponent α in
 O(2^(α n)); smaller is better, and only the issue route takes it. For 3-SAT, it is the exponent α in
-(n + m)^O(1) · 2^(n / (log n)^(α − o(1))), with one deterministic machine (see the problem guide); a larger α is
-better, and only the issue route takes it. For average sensitivity (an Other bounds
+2^(n / (log₂(n + 2))^(α − ε)) steps of one deterministic machine (times a polynomial in the input bits, for every
+ε > 0); a larger α is better, and only the issue route takes it. For average sensitivity (an Other bounds
 row), it is the coefficient C in AS(f) ≤ C d √n; smaller is better, and only the
 issue route takes it. For Catalan's constant (an Other bounds row), it is an upper
 bound μ on the irrationality exponent of G; smaller is better, and only the issue
