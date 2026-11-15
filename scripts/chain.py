@@ -43,6 +43,8 @@ SEGMENT_RECEIPT_MAX_BYTES = 64 * 1024
 HASH_START = '00000000000006bb'  # Comparator/Segment.lean hashStart (1723) in hashHex form.
 SHA256 = re.compile(r'[0-9a-f]{64}\Z')
 HASH = re.compile(r'[0-9a-f]{16}\Z')
+# A file name in a chain job's artifact folder that the final job may copy (the site's archive member rule).
+ARTIFACT_NAME = re.compile(r'[A-Za-z0-9_.-]{1,100}\Z')
 
 
 def caps(profile):
@@ -258,6 +260,12 @@ def segment(export_sha256, start, hash_from):
     print(f"check segment from {start}: {record['status']} {receipt.get('status') if isinstance(receipt, dict) else ''}", flush=True)
 
 
+def artifact_hashes():
+    """The sha256 of each file in this job's artifact folder except receipt.json, as verifier.finalize writes them."""
+    return {p.name: v.digest(p) for p in sorted(v.ART.iterdir())
+            if p.is_file() and not p.is_symlink() and p.name != 'receipt.json'}
+
+
 def leg():
     """Last step of every chain job (always): the job outputs that the next job and the final job read, and the
     sha256 of this job's receipt. The receipt file is not changed after this step."""
@@ -328,6 +336,8 @@ def leg():
     data['chain_leg'] = state
     data['verifier_commit'] = data.get('verifier_commit') or os.environ.get('GITHUB_SHA')
     data.setdefault('run_url', run_url())
+    # The files of this job's artifact, by sha256: the final job copies a file only by this pin (leg_sha256 pins it).
+    data['artifact_sha256'] = artifact_hashes()
     v.save(data)
     out['leg_sha256'] = v.digest(v.ART / 'receipt.json')
     outputs(**out)
@@ -442,6 +452,20 @@ def read_legs(needs, folder):
     return legs
 
 
+def copy_pinned(folder, receipt, name, target):
+    """Copy one file of a chain job's artifact into the final archive, only when it matches the sha256 in the job's
+    receipt (artifact_sha256; the receipt itself matches the job's leg_sha256). Returns the target name or None."""
+    pins = receipt.get('artifact_sha256') if isinstance(receipt, dict) else None
+    expected = pins.get(name) if isinstance(pins, dict) and isinstance(name, str) else None
+    if not isinstance(expected, str) or not ARTIFACT_NAME.fullmatch(name) or not ARTIFACT_NAME.fullmatch(target):
+        return None
+    source = folder / name
+    if source.is_symlink() or not source.is_file() or v.digest(source) != expected:
+        return None
+    shutil.copyfile(source, v.ART / target)
+    return target
+
+
 def final():
     """The final job: one receipt from the chain jobs' receipts (pinned by their outputs), then verifier.finalize."""
     needs = json.loads(os.environ['BOS_CHAIN_NEEDS'])
@@ -460,11 +484,30 @@ def final():
     if base_name is None:
         return  # finalize writes setup_failed.
     data = dict(legs[base_name])
+    # The logs and files of the base job (the steps' logs, build.log, audit.log, challenge.log, export.log, ...), as
+    # a normal run's archive has them. gate.json has its own pin above; each segment log gets the name of its job.
+    base_folder = folder / (artifact_prefix() + base_name)
+    for name in sorted((data.get('artifact_sha256') or {}) if isinstance(data.get('artifact_sha256'), dict) else {}):
+        if name not in ['receipt.json', 'gate.json', 'check.log']:
+            copy_pinned(base_folder, data, name, name)
     if data.get('status') == 'setup_failed' and 'request' not in data:
         v.save(data)  # The gate stopped the chain, or setup failed: as a split run's check job (finalize).
         return
     builds = [legs.get(n) for n in BUILD_LEGS if n in legs]
+    # Each job's receipt (pinned by its leg_sha256) and segment log (pinned by that receipt) in the archive too.
+    receipts, segment_logs = {}, {}
+    for n in ran:
+        if legs[n] is None:
+            continue
+        shutil.copyfile(folder / (artifact_prefix() + n) / 'receipt.json', v.ART / f'chain-{n}-receipt.json')
+        receipts[n] = f'chain-{n}-receipt.json'
+        record = legs[n].get('chain_segment')
+        if n in ['export'] + CHECK_LEGS and isinstance(record, dict) and record.get('log'):
+            target = copy_pinned(folder / (artifact_prefix() + n), legs[n], record['log'], f'check-{n}.log')
+            if target:
+                segment_logs[n] = target
     data['chain'] = {'legs': [{'leg': n, 'receipt_sha256': (job(needs, n).get('outputs') or {}).get('leg_sha256'),
+                               **({'receipt': receipts[n]} if n in receipts else {}),
                                'result': job(needs, n).get('result'), 'state': (legs[n] or {}).get('chain_leg')} for n in ran]}
     if any(b is None for b in builds) or (legs.get('export') is None and 'export' in legs):
         data['kernels'] = {'lean': {'status': 'incomplete', 'reason': 'chain_coverage'}}
@@ -494,6 +537,7 @@ def final():
         lean['segments_detail'] = [
             {'leg': n, **{k: (legs[n].get('chain_segment') or {}).get(k) for k in ['status', 'reason', 'from', 'wall_seconds',
                                                                                      'sampled_peak_cgroup_bytes', 'systemd_result']},
+             **({'log': segment_logs[n]} if n in segment_logs else {}),
              'segment': {k: ((legs[n].get('chain_segment') or {}).get('segment') or {}).get(k)
                          for k in ['status', 'from', 'to', 'todo_constants', 'parse_ms', 'replay_ms']}}
             for n in ['export'] + CHECK_LEGS if legs.get(n)]
@@ -505,7 +549,7 @@ def final():
     data['status'] = 'passed' if passed else 'not_verified'
     for key in ['chain_segment', 'chain_leg', 'error']:
         data.pop(key, None)
-    v.save(data)
+    v.save(data)  # finalize then writes artifact_sha256 for every file in the archive.
 
 
 def main():

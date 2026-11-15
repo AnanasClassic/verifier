@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import sys
 import tempfile
 import time
@@ -410,6 +411,130 @@ class FinalTests(unittest.TestCase):
         (self.tmp / 'chain-legs/chain-leg-7-1-42-build1/gate.json').write_text(json.dumps({'status': 'claimed_only'}))
         self.final()
         self.assertFalse((self.art / 'gate.json').exists())
+
+
+def named_files(receipt):
+    """Every archive file that a receipt names: a 'log' or '*_log' value, a 'receipt' value (chain.legs) and the log of
+    each step (verifier.run writes <step>.log). The site's checked_receipt needs at least the kernel and audit logs."""
+    names = {step['name'] + '.log' for step in receipt.get('steps', []) if isinstance(step, dict) and step.get('name')}
+
+    def walk(value):
+        if isinstance(value, dict):
+            for key, item in value.items():
+                if (key in ['log', 'receipt'] or key.endswith('_log')) and isinstance(item, str):
+                    names.add(item)
+                walk(item)
+        elif isinstance(value, list):
+            for item in value:
+                walk(item)
+    walk(receipt)
+    return names
+
+
+def archive_gaps(folder):
+    """The named files of the receipt in an archive folder that are not in the archive with a matching sha256 in
+    artifact_sha256, and the archive files that artifact_sha256 does not list."""
+    receipt = json.loads((folder / 'receipt.json').read_text())
+    hashes = receipt.get('artifact_sha256') or {}
+    missing = sorted(n for n in named_files(receipt)
+                     if n not in hashes or not (folder / n).is_file() or v.digest(folder / n) != hashes[n])
+    unlisted = sorted(p.name for p in folder.iterdir() if p.name != 'receipt.json' and p.name not in hashes)
+    wrong = sorted(n for n, h in hashes.items() if not (folder / n).is_file() or v.digest(folder / n) != h)
+    return missing, unlisted, wrong
+
+
+class ArchiveTests(unittest.TestCase):
+    """leg() in each chain job, then final() and finalize(): every file that the final receipt names is in the final
+    archive with its sha256 (#204, run 43669454457: the receipt named audit.log, and the archive had only gate.json
+    and receipt.json, so the site refused the import)."""
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory(); self.addCleanup(tmp.cleanup)
+        self.tmp = Path(tmp.name)
+        p = patch.object(v, 'ROOT', self.tmp); p.start(); self.addCleanup(p.stop)
+        env = patch.dict(os.environ, {'GITHUB_RUN_ID': '7', 'GITHUB_RUN_ATTEMPT': '1', 'ISSUE_NUMBER': '42',
+                                      'GITHUB_REPOSITORY': 'bigospeedrun/verifier', 'GITHUB_SHA': 'e' * 40,
+                                      'BOS_CHAIN_STARTED': repr(time.time() - 3600)}); env.start()
+        self.addCleanup(env.stop)
+        os.environ.pop('GITHUB_STEP_SUMMARY', None)
+        self.needs = {}
+        self.profile = {'runner': 'github-chain', 'chain': {'max_build_jobs': 2, 'max_check_jobs': 2, 'max_hours': 30}}
+        self.steps = [{'name': 'submission-fetch', 'exit_code': 0}, {'name': 'lean-install', 'exit_code': 0}]
+
+    def job(self, name, receipt, files, tamper=None):
+        """One chain job: its artifact folder with these files, then leg(), then the upload (a copy into chain-legs)."""
+        art = self.tmp / f'job-{name}'
+        art.mkdir()
+        for file, text in files.items():
+            (art / file).write_text(text)
+        output = self.tmp / f'out-{name}'; output.write_text('')
+        with patch.object(v, 'ART', art), patch.dict(os.environ, {'BOS_CHAIN_LEG': name, 'GITHUB_OUTPUT': str(output)}):
+            v.save(receipt)
+            chain.leg()
+        out = dict(line.split('=', 1) for line in output.read_text().splitlines())
+        leg_receipt = json.loads((art / 'receipt.json').read_text())
+        self.assertEqual(set(leg_receipt['artifact_sha256']), set(files))  # Each job pins the files it produced.
+        for file in files:
+            self.assertEqual(leg_receipt['artifact_sha256'][file], v.digest(art / file))
+        folder = self.tmp / 'chain-legs' / f'chain-leg-7-1-42-{name}'
+        shutil.copytree(art, folder)
+        if tamper:
+            (folder / tamper).write_text('changed after the job')
+        self.needs['chain_' + name] = {'result': 'success', 'outputs': out}
+
+    def run_chain(self, tamper=None):
+        logs = {f"{s['name']}.log": s['name'] for s in self.steps}
+        self.job('build1', {'schema_version': 1, 'status': 'prepared', 'started_unix': time.time() - 600,
+                            'profile': self.profile, 'steps': self.steps, 'request': {'commit': 'c' * 40},
+                            'build': {'log': 'build.log', 'attempts': [{'lake_jobs': 2, 'exit_code': 0, 'systemd_result': 'success'}]},
+                            'pack': {'sha256': 'p' * 64}},
+                 {**logs, 'build.log': 'build', 'gate.json': '{"status": "proceed"}'})
+        export = {'schema_version': 1, 'status': 'chain_export', 'started_unix': time.time() - 600, 'profile': self.profile,
+                  'steps': self.steps, 'request': {'commit': 'c' * 40}, 'theorem_names': ['Race.bound'],
+                  'kernels': {'lean': {'status': 'not_started'}, 'nanoda': {'status': 'not_started'}},
+                  'build': {'log': 'build.log', 'attempts': [{'lake_jobs': 2, 'exit_code': 0}]},
+                  'axiom_audit': {'status': 'passed', 'log': 'audit.log', 'reported_axioms': {'Race.bound': ['propext']}},
+                  'chain_challenge': {'status': 'passed', 'log': 'challenge.log'},
+                  'chain_export': {'status': 'passed', 'reason': 'comparator_acceptance', 'log': 'export.log',
+                                   'files': {'solution': {'sha256': SHA}, 'challenge': {'sha256': 'c' * 64}}},
+                  'chain_segment': dict(seg(0, 100), log='check.log')}
+        self.job('export', export, {**logs, 'build.log': 'build', 'gate.json': '{"status": "proceed"}', 'audit.log': 'audit',
+                                    'challenge.log': 'challenge', 'export.log': 'export', 'check.log': 'segment 0'},
+                 tamper=tamper)
+        self.job('check1', {'schema_version': 1, 'status': 'chain_export', 'started_unix': time.time() - 600,
+                            'profile': self.profile, 'steps': self.steps, 'chain_segment': dict(seg(100, 200, 'passed'), log='check.log')},
+                 {**logs, 'check.log': 'segment 100'})
+        for name in chain.LEGS:
+            self.needs.setdefault('chain_' + name, {'result': 'skipped', 'outputs': {}})
+        art = self.tmp / 'artifacts'
+        with patch.object(v, 'ART', art), patch.dict(os.environ, {'BOS_CHAIN_NEEDS': json.dumps(self.needs),
+                                                                  'BOS_RECEIPT_STAGE': 'final'}):
+            chain.final()
+            v.finalize()
+        return art
+
+    def test_every_named_file_is_in_the_final_archive_with_its_hash(self):
+        art = self.run_chain()
+        receipt = json.loads((art / 'receipt.json').read_text())
+        self.assertEqual(receipt['status'], 'passed')
+        self.assertEqual(archive_gaps(art), ([], [], []))
+        names = named_files(receipt)
+        for name in ['audit.log', 'challenge.log', 'export.log', 'build.log', 'submission-fetch.log', 'lean-install.log',
+                     'check-export.log', 'check-check1.log', 'chain-build1-receipt.json', 'chain-export-receipt.json',
+                     'chain-check1-receipt.json']:
+            self.assertIn(name, names)
+        self.assertEqual((art / 'check-check1.log').read_text(), 'segment 100')
+        self.assertEqual([d.get('log') for d in receipt['kernels']['lean']['segments_detail']], ['check-export.log', 'check-check1.log'])
+        for entry in receipt['chain']['legs']:
+            self.assertEqual(v.digest(art / entry['receipt']), entry['receipt_sha256'])
+        # The site's rule (direct_import.checked_receipt): the kernel and audit logs are listed and match.
+        required = {r['log'] for r in receipt['kernels'].values() if r.get('log')} | {receipt['axiom_audit']['log']}
+        self.assertLessEqual(required, set(receipt['artifact_sha256']))
+
+    def test_a_file_that_does_not_match_its_job_pin_is_not_copied(self):
+        art = self.run_chain(tamper='audit.log')
+        self.assertFalse((art / 'audit.log').exists())
+        missing, unlisted, wrong = archive_gaps(art)
+        self.assertEqual((missing, unlisted, wrong), (['audit.log'], [], []))
 
 
 class ExportAndSegmentTests(unittest.TestCase):

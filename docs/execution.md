@@ -484,7 +484,16 @@ submission file is built or loaded, so no tool comes from a job where submission
   of the chain (`chain.legs`; darkhipo's merged-receipt idea from PR #191) and uploads it
   under the normal receipt name, so the report job does not change. It copies `gate.json`
   of the export job (else of `build1`) only by the sha256 that the job's receipt holds
-  (`chain_leg.gate_sha256`). An export job whose export and audit passed but that wrote no
+  (`chain_leg.gate_sha256`). Each chain job's receipt lists the sha256 of every file that the
+  job uploads (`artifact_sha256`, written by `chain.py leg`). The final job copies into its
+  archive, each only by that pin: the files of the export job (else of the last build job),
+  as a normal run's archive has them (the step logs, `build.log`, `audit.log`,
+  `challenge.log`, `export.log`, ...); each job's segment log as `check-<job>.log`
+  (`segments_detail[].log`); and each job's receipt as `chain-<job>-receipt.json`
+  (`chain.legs[].receipt`). `finalize` then lists every file of the archive in
+  `artifact_sha256`, so every log that the final receipt names is in the archive with its
+  hash, as the site's import requires (#204, run 43669454457: the archive had only
+  `gate.json` and `receipt.json`, and the receipt named `audit.log`). An export job whose export and audit passed but that wrote no
   segment record gives `incomplete` (`no_segment_record`), not "Not verified".
 - **Caps.** The profile's `chain` object: `max_build_jobs` and `max_check_jobs` (1 to 4,
   default 1) and `max_hours` (at most 30, from the start of `build1`). No job starts when
