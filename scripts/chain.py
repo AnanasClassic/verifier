@@ -536,7 +536,7 @@ def final():
                 lean = coverage([s for s in segments if isinstance(s, dict)], sha)
         lean['segments_detail'] = [
             {'leg': n, **{k: (legs[n].get('chain_segment') or {}).get(k) for k in ['status', 'reason', 'from', 'wall_seconds',
-                                                                                     'sampled_peak_cgroup_bytes', 'systemd_result']},
+                                                                                     'sampled_peak_cgroup_bytes', 'sampled_peak_nocache_bytes', 'systemd_result']},
              **({'log': segment_logs[n]} if n in segment_logs else {}),
              'segment': {k: ((legs[n].get('chain_segment') or {}).get('segment') or {}).get(k)
                          for k in ['status', 'from', 'to', 'todo_constants', 'parse_ms', 'replay_ms']}}

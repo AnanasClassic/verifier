@@ -131,8 +131,8 @@ class ResourceReportTests(unittest.TestCase):
                     {'leg': 'check4', 'sampled_peak_cgroup_bytes': 11765760000, 'wall_seconds': 1074}]}}}
         report = v.resource_report(data)
         self.assertTrue(report['warning'])
-        self.assertEqual(report['warnings'], ['build attempt 1 (2 Lake workers): memory at 100% of its cap',
-                                              'build attempt 2 (1 Lake workers): memory at 100% of its cap'])
+        self.assertEqual(report['warnings'], ['build attempt 1 (2 Lake workers): memory peak with page cache at 100% of its cap',
+                                              'build attempt 2 (1 Lake workers): memory peak with page cache at 100% of its cap'])
         rows = {row['unit']: row for row in report['units']}
         self.assertEqual(rows['build attempt 1 (2 Lake workers)']['memory_peak_ratio'], 1.0)
         self.assertEqual(rows['lean segment check4']['memory_peak_ratio'], 0.783)
@@ -140,12 +140,57 @@ class ResourceReportTests(unittest.TestCase):
         self.assertEqual(rows['chain_export']['memory_peak_ratio'], 0.661)
         self.assertEqual(rows['build attempt 1 (2 Lake workers)']['wall_ratio'], 0.525)
 
+    def test_the_warning_reads_memory_without_page_cache(self):
+        # Task 393f7f42: the split build peaks at the cap in memory.peak (page cache) on every run. With the no-cache peak
+        # in the receipt the warning is silent at 40% and the raw ratio stays in the row.
+        cap = 14 * self.GIB
+        data = {'build': {'sampled_peak_cgroup_bytes': cap, 'sampled_peak_nocache_bytes': 5.6 * self.GIB, 'memory_limit_bytes': cap,
+                          'wall_seconds': 100, 'attempts': [
+                              {'lake_jobs': 2, 'sampled_peak_cgroup_bytes': cap, 'sampled_peak_nocache_bytes': 5.6 * self.GIB,
+                               'memory_limit_bytes': cap, 'wall_seconds': 100}]}}
+        report = v.resource_report(data)
+        self.assertFalse(report['warning']); self.assertEqual(report['warnings'], [])
+        row = report['units'][0]
+        self.assertEqual((row['memory_peak_ratio'], row['memory_nocache_ratio'], row['warn']), (1.0, 0.4, []))
+        # Anonymous memory near the cap does warn, and the text says what it counts.
+        data['build']['attempts'][0]['sampled_peak_nocache_bytes'] = 12 * self.GIB
+        self.assertEqual(v.resource_report(data)['warnings'],
+                         ['build attempt 1 (2 Lake workers): memory without page cache at 86% of its cap'])
+
+    def test_an_out_of_memory_kill_always_warns(self):
+        # The no-cache peak is a 1-second sample, so a kill can show a low ratio (#195 and #205 killed the 2-worker 3-SAT build).
+        cap = 14 * self.GIB
+        attempts = [{'lake_jobs': 2, 'systemd_result': 'oom-kill', 'sampled_peak_cgroup_bytes': cap,
+                     'sampled_peak_nocache_bytes': 7 * self.GIB, 'memory_limit_bytes': cap, 'wall_seconds': 100},
+                    {'lake_jobs': 1, 'systemd_result': 'success', 'sampled_peak_cgroup_bytes': cap,
+                     'sampled_peak_nocache_bytes': 7 * self.GIB, 'memory_limit_bytes': cap, 'wall_seconds': 100}]
+        report = v.resource_report({'build': {'attempts': attempts}})
+        self.assertEqual(report['warnings'], ['build attempt 1 (2 Lake workers): out-of-memory kill'])
+        self.assertEqual(report['units'][0]['memory_nocache_ratio'], 0.5)
+        self.assertEqual(report['units'][0]['warn'], ['oom']); self.assertEqual(report['units'][1]['warn'], [])
+        # A segment, and a unit with no numbers at all, warn too; a high ratio gives both lines.
+        data = {'kernels': {'lean': {'segments_detail': [{'leg': 'check2', 'systemd_result': 'oom-kill'}]}},
+                'chain_export': {'systemd_result': 'oom-kill', 'sampled_peak_nocache_bytes': 13 * self.GIB, 'memory_limit_bytes': cap}}
+        self.assertEqual(v.resource_report(data)['warnings'],
+                         ['chain_export: memory without page cache at 93% of its cap', 'chain_export: out-of-memory kill',
+                          'lean segment check2: out-of-memory kill'])
+        self.assertEqual(v.resource_report({'build': {'attempts': [{'lake_jobs': 1, 'systemd_result': ['oom-kill']}]}})['warnings'], [])
+
+    def test_nocache_bytes_sums_what_the_kernel_cannot_drop(self):
+        text = '\n'.join(['anon 1000', 'file 99999', 'kernel 5000', 'kernel_stack 10', 'pagetables 20', 'sec_pagetables 0',
+                          'percpu 30', 'sock 40', 'vmalloc 50', 'shmem 60', 'file_mapped 777', 'slab_reclaimable 888',
+                          'slab_unreclaimable 70', 'slab 958', ''])
+        self.assertEqual(v.nocache_bytes(text), 1000 + 10 + 20 + 0 + 30 + 40 + 50 + 60 + 70)
+        self.assertEqual(v.nocache_bytes('anon 7\nfile 9\n'), 7)
+        for bad in ['', 'file 9\n', 'anon x\n', 'anon \n']:
+            self.assertIsNone(v.nocache_bytes(bad), bad)
+
     def test_sssp_peak_and_wall_and_swap_warn(self):
         # SSSP (#127): the Lean kernel peaked at 14.2 GB, 94% of the cap. Swap at its limit and a wall near the deadline too.
         data = {'kernels': {'lean': {'sampled_peak_cgroup_bytes': 14.2e9, 'wall_seconds': 335 * 60 * 0.9,
                                      'sampled_peak_swap_bytes': 16 * self.GIB, 'swap_limit_bytes': 16 * self.GIB}}}
         report = v.resource_report(data)
-        self.assertEqual(report['warnings'], ['lean: memory at 94% of its cap', 'lean: swap at 100% of its cap',
+        self.assertEqual(report['warnings'], ['lean: memory peak with page cache at 94% of its cap', 'lean: swap at 100% of its cap',
                                               'lean: wall at 90% of the job deadline'])
 
     def test_a_receipt_without_numbers_or_with_bad_ones_has_no_warning(self):
@@ -165,13 +210,13 @@ class ResourceReportTests(unittest.TestCase):
             self.assertFalse(report['warning'], bad); self.assertEqual(report['warnings'], [])
         # A bad limit falls back to the cap; a bad peak skips the ratio.
         report = v.resource_report({'build': {'sampled_peak_cgroup_bytes': 14 * self.GIB, 'memory_limit_bytes': float('inf')}})
-        self.assertEqual(report['warnings'], ['build: memory at 100% of its cap'])
+        self.assertEqual(report['warnings'], ['build: memory peak with page cache at 100% of its cap'])
 
     def test_unit_names_from_receipt_values_are_plain(self):
         data = {'build': {'attempts': [{'lake_jobs': '[x](http://e)', 'sampled_peak_cgroup_bytes': 14 * self.GIB}]},
                 'kernels': {'a b\n#': {'segments_detail': [{'leg': '<img src=x>', 'sampled_peak_cgroup_bytes': 14 * self.GIB}]}}}
-        self.assertEqual(v.resource_report(data)['warnings'], ['build attempt 1 (? Lake workers): memory at 100% of its cap',
-                                                               '? segment ?: memory at 100% of its cap'])
+        self.assertEqual(v.resource_report(data)['warnings'], ['build attempt 1 (? Lake workers): memory peak with page cache at 100% of its cap',
+                                                               '? segment ?: memory peak with page cache at 100% of its cap'])
 
     def test_finalize_survives_a_report_that_fails(self):
         import os
@@ -205,7 +250,7 @@ class ResourceReportTests(unittest.TestCase):
                 v.ART = old[0]
                 if old[1] is not None: os.environ['GITHUB_STEP_SUMMARY'] = old[1]
         self.assertTrue(data['resource_report']['warning'])
-        self.assertEqual(data['resource_report']['warnings'], ['build: memory at 100% of its cap'])
+        self.assertEqual(data['resource_report']['warnings'], ['build: memory peak with page cache at 100% of its cap'])
 
 
 if __name__ == '__main__': unittest.main()

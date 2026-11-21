@@ -149,10 +149,16 @@ It contains `direct-submission.json`, schema version 1:
   each check (Lean kernel, axiom audit, nanoda) with its reason, for example
   `nanoda: incomplete (out_of_memory)` (verifier#194).
   `resource_report` gives, for each build attempt, kernel, chain segment, audit and export that has
-  the numbers, `memory_peak_ratio` (the sampled peak over the unit's memory cap, 14 GiB), `swap_peak_ratio`
-  and `wall_ratio` (over the job deadline), and lists in `warnings` each ratio of 0.8 or more
-  (`warn_ratio`, `warning` true). The peaks are samples, and `memory.peak` counts page cache, so a ratio near
-  1 means pressure, not always an out-of-memory kill. The job summary repeats the warnings (task c46608b8).
+  the numbers, `memory_peak_ratio` (the sampled `memory.peak` over the unit's memory cap, 14 GiB; it counts
+  page cache, so a build job sits near 1 on every run), `memory_nocache_ratio` (the sampled peak of anonymous
+  and shared memory plus the kernel memory that cannot be dropped, from `memory.stat`; the unit's
+  `sampled_peak_nocache_bytes`), `swap_peak_ratio` and `wall_ratio` (over the job deadline), and lists in
+  `warnings` each ratio of 0.8 or more (`warn_ratio`, `warning` true). The memory warning reads
+  `memory_nocache_ratio` and says "without page cache"; a unit that has no no-cache peak (a receipt from before
+  task 393f7f42) warns on the raw peak and says "peak with page cache". A unit that the kernel killed
+  for memory (`systemd_result` `oom-kill`) always has the warning "out-of-memory kill", whatever its ratios, because the
+  no-cache peak is a 1-second sample and can miss the last climb. The peaks are samples. The job summary
+  repeats the warnings (tasks c46608b8, 393f7f42).
 - `record_gate`: the snapshot of the best Lean Verified row (or the end of the profile range) used for the admission-to-run check.
 
 The importer independently binds repository, approved verifier revision, workflow

@@ -58,7 +58,7 @@ unpatched lean4export. When upstream merges both PRs, move the pin past them and
 5. Run `#print axioms` for each target. Run Comparator again with nanoda enabled;
    that pass also repeats Lean's kernel check.
 6. Upload `receipt.json`, source/tool hashes, per-stage logs, times, and
-   sampled cgroup memory peaks as `verifier-receipt-and-logs-…`.
+   sampled cgroup memory peaks (with and without page cache) as `verifier-receipt-and-logs-…`.
 
 The receipt reports each theorem and kernel separately. The theorems in one
 request share a proof closure, so their time and memory measurements are shared.

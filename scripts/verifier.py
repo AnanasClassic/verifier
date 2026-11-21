@@ -733,6 +733,23 @@ print('Network/process namespaces, credential visibility, and read-only mounts p
             str(WORK / 'stage/.lake/packages/mathlib/lean-toolchain')], 'sandbox-preflight')
 
 
+NOCACHE_KEYS = ['anon', 'shmem', 'kernel_stack', 'pagetables', 'sec_pagetables', 'percpu', 'sock', 'vmalloc', 'slab_unreclaimable']
+
+
+def nocache_bytes(stat_text):
+    """Task 393f7f42. The memory of a cgroup that the kernel cannot drop under pressure, from its memory.stat: anonymous and
+    shared memory plus the kernel memory that is not reclaimable (NOCACHE_KEYS). Page cache and reclaimable slab are left
+    out: memory.peak counts them, and they fill a job up to its cap on every run (the 3-SAT and SSSP builds), also on runs
+    without a kill.
+    None when memory.stat has no anon line."""
+    fields = {}
+    for line in stat_text.splitlines():
+        name, _, value = line.partition(' ')
+        if name in NOCACHE_KEYS and value.strip().isdigit():
+            fields[name] = int(value)
+    return sum(fields.values()) if 'anon' in fields else None
+
+
 def launch_github(kernel, command_args, deadline, log_mode='w'):
     """One systemd-run unit per stage with its own caps; returns exit code, unit result, guard stop, start, usage."""
     swap_limit = kernel_swap_limit(kernel)
@@ -755,6 +772,7 @@ def launch_github(kernel, command_args, deadline, log_mode='w'):
             '--property=RuntimeMaxSec=' + str(remaining), '--property=TasksMax=' + str(TASKS_MAX), *command_args]
     print(f'{kernel}: isolated check started', flush=True)
     start, peak, swap_peak, tasks_peak, guard_stop = time.monotonic(), 0, 0, 0, None
+    nocache_peak = None
     with (ART / f'{kernel}.log').open(log_mode) as log:
         proc = subprocess.Popen(args, stdout=log, stderr=subprocess.STDOUT)
         while proc.poll() is None:
@@ -763,6 +781,10 @@ def launch_github(kernel, command_args, deadline, log_mode='w'):
             except (FileNotFoundError, ValueError): pass
             try: swap_peak = max(swap_peak, int(memory.with_name('memory.swap.current').read_text()))
             except (FileNotFoundError, ValueError): pass
+            try:
+                nocache = nocache_bytes(memory.with_name('memory.stat').read_text())
+                if nocache is not None: nocache_peak = max(nocache_peak or 0, nocache)
+            except (FileNotFoundError, ValueError, OSError): pass
             for name in ['pids.peak', 'pids.current']:
                 try: tasks_peak = max(tasks_peak, int(memory.with_name(name).read_text()))
                 except (FileNotFoundError, ValueError): pass
@@ -776,6 +798,8 @@ def launch_github(kernel, command_args, deadline, log_mode='w'):
     usage = {'sampled_peak_cgroup_bytes': peak, 'memory_limit_bytes': 14 * 1024**3,
              'sampled_peak_swap_bytes': swap_peak, 'swap_limit_bytes': swap_limit,
              'sampled_peak_tasks': tasks_peak, 'tasks_limit': TASKS_MAX}
+    if nocache_peak is not None:
+        usage['sampled_peak_nocache_bytes'] = nocache_peak
     return code, systemd_result, guard_stop, start, usage
 
 
@@ -945,6 +969,8 @@ def build():
                      'wall_seconds': round(sum(a['wall_seconds'] for a in attempts), 3),
                      'sampled_peak_cgroup_bytes': max(a['sampled_peak_cgroup_bytes'] for a in attempts),
                      'sampled_peak_swap_bytes': max(a['sampled_peak_swap_bytes'] for a in attempts),
+                     **({'sampled_peak_nocache_bytes': max(a['sampled_peak_nocache_bytes'] for a in attempts if 'sampled_peak_nocache_bytes' in a)}
+                        if any('sampled_peak_nocache_bytes' in a for a in attempts) else {}),
                      'sampled_peak_tasks': max(a['sampled_peak_tasks'] for a in attempts),
                      'log': 'build.log', 'attempts': attempts}
     save(data)
@@ -1169,7 +1195,8 @@ def verify_nanoda():
 
 # Task c46608b8. A unit (a build attempt, a kernel, a chain segment, the audit, the export) that peaks at this share of its
 # memory cap, or runs this share of the job deadline, gets a warning in the receipt (resource_report): SSSP peaks at 94% and
-# the 3-SAT build at 100% of the cap, and nothing in the receipt said so.
+# the 3-SAT build at 100% of the cap, and nothing in the receipt said so. Task 393f7f42: the memory ratio of the warning
+# leaves out page cache (nocache_bytes), which fills every job to its cap.
 WARN_RATIO = 0.8
 MEMORY_LIMIT_BYTES = 14 * 1024**3
 RATIO_KEYS = {'memory': 'memory_peak_ratio', 'swap': 'swap_peak_ratio', 'wall': 'wall_ratio'}
@@ -1215,25 +1242,44 @@ def resource_units(data):
 
 
 def resource_report(data):
-    """memory_peak_ratio (sampled peak over the unit's memory cap), swap_peak_ratio and wall_ratio (over this job's deadline)
-    of every unit that has the numbers, and the ones that reach WARN_RATIO. A ratio is a sample, as the peaks are."""
+    """memory_peak_ratio (sampled raw peak, page cache included, over the unit's memory cap), memory_nocache_ratio (the
+    sampled peak without page cache over the cap, when the unit has it), swap_peak_ratio and wall_ratio (over this job's
+    deadline) of every unit that has the numbers, and the ones that reach WARN_RATIO. The memory warning reads the no-cache
+    ratio (task 393f7f42); a unit without it (a receipt from before that change) warns on the raw peak and says so.
+    A unit with systemd_result oom-kill always warns (out-of-memory kill), whatever its ratios.
+    A ratio is a sample, as the peaks are."""
     rows, warnings = [], []
     for name, usage in resource_units(data):
         row = {'unit': name}
         peak, limit = number(usage.get('sampled_peak_cgroup_bytes')), number(usage.get('memory_limit_bytes')) or MEMORY_LIMIT_BYTES
+        nocache = number(usage.get('sampled_peak_nocache_bytes'))
         if peak is not None:
             row['memory_peak_ratio'] = round(peak / limit, 3)
+        if nocache is not None:
+            row['memory_nocache_ratio'] = round(nocache / limit, 3)
         swap, swap_limit = number(usage.get('sampled_peak_swap_bytes')), number(usage.get('swap_limit_bytes'))
         if swap is not None and swap_limit:
             row['swap_peak_ratio'] = round(swap / swap_limit, 3)
         wall = number(usage.get('wall_seconds'))
         if wall is not None:
             row['wall_ratio'] = round(wall / DEADLINE_SECONDS, 3)
-        if len(row) == 1:
+        oom = usage.get('systemd_result') == 'oom-kill'
+        if len(row) == 1 and not oom:
             continue  # no numbers: a kernel that did not run
-        row['warn'] = [what for what, key in RATIO_KEYS.items() if row.get(key, 0) >= WARN_RATIO]
-        warnings += [f'{name}: {what} at {round(row[RATIO_KEYS[what]] * 100)}% of ' + ('the job deadline' if what == 'wall' else 'its cap')
-                     for what in row['warn']]
+        memory_key = 'memory_nocache_ratio' if 'memory_nocache_ratio' in row else 'memory_peak_ratio'
+        row['warn'] = [what for what, key in RATIO_KEYS.items() if row.get(memory_key if what == 'memory' else key, 0) >= WARN_RATIO]
+        if oom:
+            # The no-cache peak is a 1-second sample (memory.peak is the kernel's high-water mark), so the last climb before
+            # a kill can fall between two samples. A kill always warns, whatever the ratios say.
+            row['warn'].append('oom')
+        for what in row['warn']:
+            if what == 'oom':
+                warnings.append(f'{name}: out-of-memory kill')
+            elif what == 'memory':
+                warnings.append(f'{name}: memory ' + ('without page cache' if memory_key == 'memory_nocache_ratio' else 'peak with page cache')
+                                + f' at {round(row[memory_key] * 100)}% of its cap')
+            else:
+                warnings.append(f'{name}: {what} at {round(row[RATIO_KEYS[what]] * 100)}% of ' + ('the job deadline' if what == 'wall' else 'its cap'))
         rows.append(row)
     return {'warn_ratio': WARN_RATIO, 'warning': bool(warnings), 'warnings': warnings, 'units': rows}
 
