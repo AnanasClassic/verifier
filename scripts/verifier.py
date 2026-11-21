@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -1166,6 +1167,77 @@ def verify_nanoda():
     save(data)
 
 
+# Task c46608b8. A unit (a build attempt, a kernel, a chain segment, the audit, the export) that peaks at this share of its
+# memory cap, or runs this share of the job deadline, gets a warning in the receipt (resource_report): SSSP peaks at 94% and
+# the 3-SAT build at 100% of the cap, and nothing in the receipt said so.
+WARN_RATIO = 0.8
+MEMORY_LIMIT_BYTES = 14 * 1024**3
+RATIO_KEYS = {'memory': 'memory_peak_ratio', 'swap': 'swap_peak_ratio', 'wall': 'wall_ratio'}
+
+
+def number(value):
+    """A finite number from 0 to 2**63, else None: a receipt value comes from a leg's artifact, and Python's json reads
+    Infinity, NaN and integers of any size."""
+    if type(value) not in (int, float) or not 0 <= value <= 2**63:
+        return None
+    return value if math.isfinite(value) else None
+
+
+def label(value):
+    """Part of a unit name, from receipt values: a small integer or a short plain word, else '?'."""
+    if type(value) is int and 0 <= value < 1000 or isinstance(value, str) and re.fullmatch(r'[A-Za-z0-9_-]{1,32}', value):
+        return str(value)
+    return '?'
+
+
+def resource_units(data):
+    """(name, usage) pairs of the receipt: a unit with attempts counts by attempt, since the top-level fields of the
+    unit repeat the last attempt and the highest samples."""
+    units = []
+
+    def add(name, value):
+        attempts = [a for a in value.get('attempts') or [] if isinstance(a, dict)] if isinstance(value, dict) else []
+        if attempts:
+            units.extend((f'{name} attempt {i + 1}' + (f' ({label(a["lake_jobs"])} Lake workers)' if name == 'build' and 'lake_jobs' in a else ''), a)
+                         for i, a in enumerate(attempts))
+        elif isinstance(value, dict):
+            units.append((name, value))
+    add('build', data.get('build'))
+    for name in ['axiom_audit', 'chain_challenge', 'chain_export']:
+        add(name, data.get(name))
+    kernels = data.get('kernels') if isinstance(data.get('kernels'), dict) else {}
+    for kernel, result in kernels.items():
+        add(label(kernel), result)
+        for segment in (result.get('segments_detail') or []) if isinstance(result, dict) else []:
+            if isinstance(segment, dict):
+                units.append((f'{label(kernel)} segment {label(segment.get("leg"))}', segment))
+    return units
+
+
+def resource_report(data):
+    """memory_peak_ratio (sampled peak over the unit's memory cap), swap_peak_ratio and wall_ratio (over this job's deadline)
+    of every unit that has the numbers, and the ones that reach WARN_RATIO. A ratio is a sample, as the peaks are."""
+    rows, warnings = [], []
+    for name, usage in resource_units(data):
+        row = {'unit': name}
+        peak, limit = number(usage.get('sampled_peak_cgroup_bytes')), number(usage.get('memory_limit_bytes')) or MEMORY_LIMIT_BYTES
+        if peak is not None:
+            row['memory_peak_ratio'] = round(peak / limit, 3)
+        swap, swap_limit = number(usage.get('sampled_peak_swap_bytes')), number(usage.get('swap_limit_bytes'))
+        if swap is not None and swap_limit:
+            row['swap_peak_ratio'] = round(swap / swap_limit, 3)
+        wall = number(usage.get('wall_seconds'))
+        if wall is not None:
+            row['wall_ratio'] = round(wall / DEADLINE_SECONDS, 3)
+        if len(row) == 1:
+            continue  # no numbers: a kernel that did not run
+        row['warn'] = [what for what, key in RATIO_KEYS.items() if row.get(key, 0) >= WARN_RATIO]
+        warnings += [f'{name}: {what} at {round(row[RATIO_KEYS[what]] * 100)}% of ' + ('the job deadline' if what == 'wall' else 'its cap')
+                     for what in row['warn']]
+        rows.append(row)
+    return {'warn_ratio': WARN_RATIO, 'warning': bool(warnings), 'warnings': warnings, 'units': rows}
+
+
 def receipt_status(data):
     """The receipt's status comes from the verdict's own rule (verdicts.admission), so the receipt and the result say the
     same: before, a run whose advisory nanoda check did not finish said not_verified here and Lean Verified in the result
@@ -1209,6 +1281,11 @@ def finalize():
         'reported_axioms': data.get('axiom_audit', {}).get('reported_axioms', {}).get(name),
         'timing_group': 'shared theorem closure'} for name in data.get('theorem_names', [])}
     receipt_status(data)
+    try:
+        data['resource_report'] = resource_report(data)
+    except Exception:  # a warning field never stops the receipt
+        data['resource_report'] = {'warn_ratio': WARN_RATIO, 'warning': False, 'warnings': [], 'units': [],
+                                   'error': 'resource_report_failed'}
     data['artifact_sha256'] = {p.name: digest(p) for p in ART.iterdir() if p.is_file() and p.name != 'receipt.json'}
     save(data)
     summary = [f'# Verifier result: {data["status"]}', '',
@@ -1219,6 +1296,7 @@ def finalize():
                '| Kernel | Result | Seconds | Sampled peak GiB |', '|---|---|---:|---:|']
     for name, result in data.get('kernels', {}).items():
         summary.append(f'| {name} | {result["status"]} | {result.get("wall_seconds", "—")} | {result.get("sampled_peak_cgroup_bytes", 0)/1024**3:.2f} |')
+    summary += ['', *[f'Resource warning, {w}.' for w in data['resource_report']['warnings']]]
     summary += ['', 'Read the receipt and logs artifact for axiom output, provenance, and limits.',
                 'A timeout, cancelled run, or incomplete kernel check is not a proof rejection.']
     if os.environ.get('GITHUB_STEP_SUMMARY'):

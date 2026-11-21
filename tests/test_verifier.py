@@ -115,4 +115,97 @@ class ReceiptStatusTests(unittest.TestCase):
         self.assertEqual(data['status'], 'passed')
 
 
+class ResourceReportTests(unittest.TestCase):
+    GIB = 1024**3
+
+    def test_3sat_build_at_the_cap_warns_and_a_78_percent_segment_does_not(self):
+        # Run 43624031679 (#195): the 2-worker build peaked at the cap and was killed; the 1-worker retry peaked there too;
+        # the longest Lean segment peaked at 11.8 GB (78%).
+        cap = 14 * self.GIB
+        data = {'build': {'sampled_peak_cgroup_bytes': cap, 'wall_seconds': 11371.3, 'attempts': [
+                    {'lake_jobs': 2, 'sampled_peak_cgroup_bytes': cap, 'memory_limit_bytes': cap, 'wall_seconds': 10549.8},
+                    {'lake_jobs': 1, 'sampled_peak_cgroup_bytes': cap, 'memory_limit_bytes': cap, 'wall_seconds': 821.4}]},
+                'chain_export': {'sampled_peak_cgroup_bytes': 9.93e9, 'memory_limit_bytes': cap, 'wall_seconds': 160},
+                'kernels': {'lean': {'status': 'passed', 'segments_detail': [
+                    {'leg': 'check3', 'sampled_peak_cgroup_bytes': 5948358656, 'wall_seconds': 294},
+                    {'leg': 'check4', 'sampled_peak_cgroup_bytes': 11765760000, 'wall_seconds': 1074}]}}}
+        report = v.resource_report(data)
+        self.assertTrue(report['warning'])
+        self.assertEqual(report['warnings'], ['build attempt 1 (2 Lake workers): memory at 100% of its cap',
+                                              'build attempt 2 (1 Lake workers): memory at 100% of its cap'])
+        rows = {row['unit']: row for row in report['units']}
+        self.assertEqual(rows['build attempt 1 (2 Lake workers)']['memory_peak_ratio'], 1.0)
+        self.assertEqual(rows['lean segment check4']['memory_peak_ratio'], 0.783)
+        self.assertEqual(rows['lean segment check4']['warn'], [])
+        self.assertEqual(rows['chain_export']['memory_peak_ratio'], 0.661)
+        self.assertEqual(rows['build attempt 1 (2 Lake workers)']['wall_ratio'], 0.525)
+
+    def test_sssp_peak_and_wall_and_swap_warn(self):
+        # SSSP (#127): the Lean kernel peaked at 14.2 GB, 94% of the cap. Swap at its limit and a wall near the deadline too.
+        data = {'kernels': {'lean': {'sampled_peak_cgroup_bytes': 14.2e9, 'wall_seconds': 335 * 60 * 0.9,
+                                     'sampled_peak_swap_bytes': 16 * self.GIB, 'swap_limit_bytes': 16 * self.GIB}}}
+        report = v.resource_report(data)
+        self.assertEqual(report['warnings'], ['lean: memory at 94% of its cap', 'lean: swap at 100% of its cap',
+                                              'lean: wall at 90% of the job deadline'])
+
+    def test_a_receipt_without_numbers_or_with_bad_ones_has_no_warning(self):
+        for data in [{}, {'build': None, 'kernels': {'lean': None, 'nanoda': {'status': 'incomplete'}}},
+                     {'kernels': {'lean': {'sampled_peak_cgroup_bytes': 'x', 'wall_seconds': -1, 'segments_detail': [None, 3]}}}]:
+            report = v.resource_report(data)
+            self.assertFalse(report['warning']); self.assertEqual(report['warnings'], [])
+
+    def test_values_that_are_not_finite_numbers_are_skipped(self):
+        # json.loads reads Infinity, NaN and an integer of any size; a bool is not a number here.
+        for bad in [float('inf'), float('nan'), 10**400, True, -1, 2**64, 'x', None]:
+            data = {'build': {'sampled_peak_cgroup_bytes': bad, 'memory_limit_bytes': bad, 'wall_seconds': bad,
+                              'sampled_peak_swap_bytes': bad, 'swap_limit_bytes': bad, 'attempts': [
+                                  {'lake_jobs': bad, 'sampled_peak_cgroup_bytes': bad, 'wall_seconds': bad}]},
+                    'kernels': {'lean': {'segments_detail': [{'leg': bad, 'sampled_peak_cgroup_bytes': bad, 'wall_seconds': bad}]}}}
+            report = v.resource_report(data)
+            self.assertFalse(report['warning'], bad); self.assertEqual(report['warnings'], [])
+        # A bad limit falls back to the cap; a bad peak skips the ratio.
+        report = v.resource_report({'build': {'sampled_peak_cgroup_bytes': 14 * self.GIB, 'memory_limit_bytes': float('inf')}})
+        self.assertEqual(report['warnings'], ['build: memory at 100% of its cap'])
+
+    def test_unit_names_from_receipt_values_are_plain(self):
+        data = {'build': {'attempts': [{'lake_jobs': '[x](http://e)', 'sampled_peak_cgroup_bytes': 14 * self.GIB}]},
+                'kernels': {'a b\n#': {'segments_detail': [{'leg': '<img src=x>', 'sampled_peak_cgroup_bytes': 14 * self.GIB}]}}}
+        self.assertEqual(v.resource_report(data)['warnings'], ['build attempt 1 (? Lake workers): memory at 100% of its cap',
+                                                               '? segment ?: memory at 100% of its cap'])
+
+    def test_finalize_survives_a_report_that_fails(self):
+        import os
+        from unittest import mock
+        old = (v.ART, os.environ.get('GITHUB_STEP_SUMMARY'))
+        with tempfile.TemporaryDirectory() as folder, mock.patch.object(v, 'resource_report', side_effect=OverflowError('x')):
+            try:
+                v.ART = Path(folder)
+                os.environ.pop('GITHUB_STEP_SUMMARY', None)
+                v.save({'schema_version': 1, 'status': 'setup_failed', 'steps': [], 'kernels': {}})
+                v.finalize()
+                data = v.receipt()
+            finally:
+                v.ART = old[0]
+                if old[1] is not None: os.environ['GITHUB_STEP_SUMMARY'] = old[1]
+        self.assertEqual(data['status'], 'setup_failed'); self.assertIn('artifact_sha256', data)
+        self.assertEqual(data['resource_report']['error'], 'resource_report_failed')
+
+    def test_the_finalized_receipt_carries_the_report(self):
+        import os
+        old = (v.ART, os.environ.get('GITHUB_STEP_SUMMARY'))
+        with tempfile.TemporaryDirectory() as folder:
+            try:
+                v.ART = Path(folder)
+                os.environ.pop('GITHUB_STEP_SUMMARY', None)
+                v.save({'schema_version': 1, 'status': 'setup_failed', 'steps': [], 'kernels': {},
+                        'build': {'sampled_peak_cgroup_bytes': 14 * self.GIB, 'wall_seconds': 60}})
+                v.finalize()
+                data = v.receipt()
+            finally:
+                v.ART = old[0]
+                if old[1] is not None: os.environ['GITHUB_STEP_SUMMARY'] = old[1]
+        self.assertTrue(data['resource_report']['warning'])
+        self.assertEqual(data['resource_report']['warnings'], ['build: memory at 100% of its cap'])
+
+
 if __name__ == '__main__': unittest.main()

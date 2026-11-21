@@ -148,6 +148,11 @@ It contains `direct-submission.json`, schema version 1:
   that the rule does not pass stay as they are. `check_summary` gives the outcome of
   each check (Lean kernel, axiom audit, nanoda) with its reason, for example
   `nanoda: incomplete (out_of_memory)` (verifier#194).
+  `resource_report` gives, for each build attempt, kernel, chain segment, audit and export that has
+  the numbers, `memory_peak_ratio` (the sampled peak over the unit's memory cap, 14 GiB), `swap_peak_ratio`
+  and `wall_ratio` (over the job deadline), and lists in `warnings` each ratio of 0.8 or more
+  (`warn_ratio`, `warning` true). The peaks are samples, and `memory.peak` counts page cache, so a ratio near
+  1 means pressure, not always an out-of-memory kill. The job summary repeats the warnings (task c46608b8).
 - `record_gate`: the snapshot of the best Lean Verified row (or the end of the profile range) used for the admission-to-run check.
 
 The importer independently binds repository, approved verifier revision, workflow
