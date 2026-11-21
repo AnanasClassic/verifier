@@ -68,7 +68,8 @@ class StatementTests(unittest.TestCase):
         self.assertIn('\n[[lean_lib]]\nname = "Frontier"\n[lean_lib.leanOptions]\nautoImplicit = true\n', lake)
         self.assertEqual(lake.count('autoImplicit = true'), 1)
         self.assertFalse((CHALLENGE / 'Frontier').exists())
-        self.assertNotIn('runner', profile)
+        # Split since task 4be721f7: the fork build runs in its own job (a one-job run peaked at 14.2 GB, 94% of the cap).
+        self.assertEqual(profile['runner'], 'github-split')
 
     def test_the_problem_is_open(self):
         self.assertNotIn('directed-sssp', s.CLOSED)

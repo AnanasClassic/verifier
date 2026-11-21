@@ -113,7 +113,7 @@ It is an operation-count theorem, not a bit-complexity claim.
 ## Split build for large proofs
 
 A profile with `"runner": "github-split"` runs in two hosted jobs of one
-workflow run. Today `catalan` and `3sum` have it. Catalan opened on 2026-10-27, after
+workflow run. Today `catalan`, `3sum` and `directed-sssp` have it. Directed shortest paths run split since task 4be721f7: in one job the Comparator unit built the pinned fork (`Frontier`, about 2,000 Lake jobs) inside the 14 GiB unit and peaked at 14.2 GB (94%) for 54-62 min; split (branch test, run 44929651659) the build job takes 26 min and the Lean check job peaks at 3.0 GB for 8 min. Catalan opened on 2026-10-27, after
 the maintainer smoke below passed (run 40497685416, issue #68). 3SUM issues run split
 since 2026-11-02: issue #99 compiled one module at a time for 5 h 16 min in one job
 and ran out of time (run 41393097953). Each job has the 350-minute job timeout and its

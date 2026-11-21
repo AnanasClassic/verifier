@@ -165,7 +165,8 @@
           "autoImplicit": true
         }
       }
-    ]
+    ],
+    "runner": "github-split"
   },
   "prime-gaps": {
     "challenge_file": "challenges/prime-gaps/Statement.lean",
