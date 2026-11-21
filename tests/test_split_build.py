@@ -28,13 +28,14 @@ def sub(problem, bound='1'):
 
 class RunnerTests(unittest.TestCase):
     def test_runner_values(self):
-        self.assertEqual(s.runner(sub('catalan')), 'github-split')
+        # Catalan is a check chain since task 135cf916 (it was split from 2026-10-27).
+        self.assertEqual(s.runner(sub('catalan')), 'github-chain')
         # 3SUM issues run split since 2026-11-02: issue #99 built for over 5 h 16 min in one job and timed out.
         self.assertEqual(s.runner(sub('3sum')), 'github-split')
         for problem in ['dft', 'apsp', 'average-sensitivity', 'subset-sum']:
             self.assertEqual(s.runner(sub(problem)), 'github')
         self.assertEqual(s.runner(dict(sub('dft', '7547360/10000000000'), entrypoint='dft233')), 'github')
-        # Catalan opened on 2026-10-27; its issues run as split runs.
+        # Catalan opened on 2026-10-27.
         self.assertNotIn('catalan', s.CLOSED)
 
     def test_an_unknown_runner_is_refused(self):
@@ -49,7 +50,7 @@ class RunnerTests(unittest.TestCase):
 
     def test_matrix_entry(self):
         self.assertEqual(s.matrix_entry(5, 'x', 'issue', sub('catalan')),
-                         {'issue_number': 5, 'login': 'x', 'route': 'issue', 'split': True})
+                         {'issue_number': 5, 'login': 'x', 'route': 'issue', 'chain': True})
         self.assertEqual(s.matrix_entry(5, 'x', 'issue', sub('3sum')),
                          {'issue_number': 5, 'login': 'x', 'route': 'issue', 'split': True})
         self.assertEqual(s.matrix_entry(5, 'x', 'issue', sub('dft')), {'issue_number': 5, 'login': 'x', 'route': 'issue'})

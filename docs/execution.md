@@ -113,7 +113,7 @@ It is an operation-count theorem, not a bit-complexity claim.
 ## Split build for large proofs
 
 A profile with `"runner": "github-split"` runs in two hosted jobs of one
-workflow run. Today `catalan`, `3sum` and `directed-sssp` have it. Directed shortest paths run split since task 4be721f7: in one job the Comparator unit built the pinned fork (`Frontier`, about 2,000 Lake jobs) inside the 14 GiB unit and peaked at 14.2 GB (94%) for 54-62 min; split (branch test, run 44929651659) the build job takes 26 min and the Lean check job peaks at 3.0 GB for 8 min. Catalan opened on 2026-10-27, after
+workflow run. Today `3sum` and `directed-sssp` have it (and `prime-gaps`). Directed shortest paths run split since task 4be721f7: in one job the Comparator unit built the pinned fork (`Frontier`, about 2,000 Lake jobs) inside the 14 GiB unit and peaked at 14.2 GB (94%) for 54-62 min; split (branch test, run 44929651659) the build job takes 26 min and the Lean check job peaks at 3.0 GB for 8 min. Catalan opened on 2026-10-27, after
 the maintainer smoke below passed (run 40497685416, issue #68). 3SUM issues run split
 since 2026-11-02: issue #99 compiled one module at a time for 5 h 16 min in one job
 and ran out of time (run 41393097953). Each job has the 350-minute job timeout and its
@@ -416,7 +416,7 @@ separate reviewed change.
 
 A profile with `"runner": "github-chain"` runs as a chain of hosted jobs in one workflow
 run (task b1457f08): `build1`..`build4`, `export`, `check1`..`check4` and `final`
-(`.github/workflows/submission-check.yml`, `scripts/chain.py`). No profile uses it yet.
+(`.github/workflows/submission-check.yml`, `scripts/chain.py`). `3sat` uses it since 2026-11-15 and `catalan` since task 135cf916 (2026-11-21; before, Catalan ran split: 1 of 8 runs from 2026-11-03 to 2026-11-14 ended Lean Verified (#187), with build OOM-kills at 4, 3 and 2 Lake workers and Lean kernel timeouts at 320 min). The Catalan profile has `lake_workers_start` 1 and `chain` 4 build jobs, 4 check jobs, 30 hours and `segment_parts` 5, as 3-SAT.
 It is for proofs whose build, or whose kernel check, does not fit one 350-minute job
 (verifier#182: about 14 h of single-stream build left; the OpenAI 3-SAT proof: 3,091
 modules, 23 GB of build output). Every job is a standard free `ubuntu-24.04` runner with

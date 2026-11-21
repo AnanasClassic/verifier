@@ -27,7 +27,11 @@ class StatementTests(unittest.TestCase):
         self.assertEqual(profile['challenge_sha256'], hashlib.sha256((ROOT / profile['challenge_file']).read_bytes()).hexdigest())
         self.assertEqual(profile['challenge_sha256'], '9ba7370f1256ef680ccf674e653b5456735c478f9ac80fcffc90f130ac4a2ce6')
         self.assertEqual((profile['lean_toolchain'], profile['manifest_file'], profile['tools_file']),
-                         ('leanprover/lean4:v4.34.1', 'profiles/lake-manifest.json', 'profiles/tools.json'))
+                         ('leanprover/lean4:v4.34.1', 'profiles/lake-manifest.json', 'profiles/tools-chain.json'))
+        # Task 135cf916: a check chain since 2026-11-21 (0 of 8 one-job and split runs passed in the nine days before; a chain
+        # passed #187 in 2 segments at 14.0 and 8.7 GB). One first Lake worker; segment_parts 5 as the 3-SAT profile.
+        self.assertEqual((profile['runner'], profile['lake_workers_start'], profile['chain']),
+                         ('github-chain', 1, {'max_build_jobs': 4, 'max_check_jobs': 4, 'max_hours': 30, 'segment_parts': 5}))
         text = (CHALLENGE / 'Statement.lean').read_text()
         self.assertTrue(all(line.startswith('import Mathlib.') for line in text.splitlines() if line.startswith('import')))
         self.assertNotIn('sorry', text)
@@ -101,11 +105,11 @@ class OpenTests(unittest.TestCase):
             finally:
                 os.chdir(old)
 
-    def test_an_open_issue_is_selected_as_a_split_run(self):
+    def test_an_open_issue_is_selected_as_a_chain_run(self):
         request, output = self.select(issue())
         self.assertEqual((request['submission']['problem'], request['record_gate']['score']), ('catalan', '100000000'))
         self.assertEqual(request['inputs']['challenge_file'], 'challenges/catalan/Statement.lean')
-        self.assertIn(s.canonical({'include': [{'issue_number': 60, 'login': 'submitter', 'route': 'issue', 'split': True}]}), output)
+        self.assertIn(s.canonical({'include': [{'issue_number': 60, 'login': 'submitter', 'route': 'issue', 'chain': True}]}), output)
 
     def test_the_scan_skips_a_maintainer_test_issue(self):
         # Only the dispatch (smoke.py) runs a test issue; a label needs triage rights.

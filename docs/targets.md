@@ -105,9 +105,11 @@ that `r ≥ 0` and that for every real `s > r`, for all large `b` and every inte
 `b^(-s) < |G - a/b|`. A smaller `r` is better. See
 [the statement README](../challenges/catalan/README.md) for the quantifiers.
 
-A Catalan proof is large, so it runs as a
-[split build](execution.md#split-build-for-large-proofs). Only the final result is
-posted. Nanoda can end incomplete (time or memory limit); that does not prevent Lean Verified.
+A Catalan proof is large, so it runs on the
+[check chain](execution.md#check-chain-for-proofs-that-need-more-than-one-job) (since 2026-11-21;
+before, as a split build): up to four build jobs, an export job and up to four check jobs. Only the
+final result is posted. A chain runs no nanoda pass (`nanoda: incomplete (not_run_chain)`); that does
+not prevent Lean Verified.
 
 [Convert a proof repository to the Submission layout](convert-layout.md) explains how
 to move an existing proof (for example, Sean Litsey's Catalan repository) into the

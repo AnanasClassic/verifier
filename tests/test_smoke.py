@@ -82,14 +82,14 @@ class CatalanSmokeTests(unittest.TestCase):
         self.assertEqual(smoke.CATALAN_FIXTURE,('catalan','1091','https://github.com/bigospeedrun/verifier-smoke-catalan',
                                                 'a3d48494df743e8dbf2dd5acb70dbe27759069e0'))
 
-    def test_dispatch_selects_one_split_issue_entry(self):
+    def test_dispatch_selects_one_chain_issue_entry(self):
         item,selected=self.dispatch()
         self.assertEqual(smoke.fixture(selected['submission']),smoke.CATALAN_FIXTURE)
         self.assertEqual(selected['submission'],s.issue_input(item))
         self.assertEqual((selected['test_only'],selected['live_smoke'],selected['lease_kind']),(True,smoke.CATALAN_TAG,'smoke'))
         self.assertTrue(smoke.active(selected));self.assertTrue(smoke.silent(selected))
         out=(self.tmp/'output').read_text()
-        self.assertIn('matrix='+s.canonical({'include':[{'issue_number':48,'login':'submitter','route':'issue','split':True}]}),out)
+        self.assertIn('matrix='+s.canonical({'include':[{'issue_number':48,'login':'submitter','route':'issue','chain':True}]}),out)
         for field,value in [('test_only',False),('live_smoke',smoke.TAG),('live_smoke',smoke.AS_TAG),('route','pull_request'),
                             ('submission',dict(selected['submission'],bound='1090'))]:
             with self.subTest(field=field,value=value):

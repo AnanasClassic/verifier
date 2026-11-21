@@ -48,8 +48,9 @@ takes it. The ranges are 0 ≤ s ≤ 1,
 average sensitivity, 0 ≤ μ ≤ 100000000 for Catalan, 0 ≤ n ≤ 100 for Snaky,
 0 < η ≤ 5/6 for Heilbronn, and 0 ≤ B ≤ 100000 for prime gaps.
 
-A Catalan or prime gaps proof is large, so it runs in two jobs: a build job, then the check job
-([split build](docs/execution.md#split-build-for-large-proofs)). This has three
+A prime gaps proof is large, so it runs in two jobs: a build job, then the check job
+([split build](docs/execution.md#split-build-for-large-proofs)). A Catalan proof runs on a chain of
+jobs ([check chain](docs/execution.md#check-chain-for-proofs-that-need-more-than-one-job)). This has three
 effects. The bot posts only the final result, not an earlier Lean checkpoint
 comment. The run holds the verifier queue for its full time, up to about 12 hours.
 Nanoda can end incomplete (time or memory limit); that does not prevent Lean
