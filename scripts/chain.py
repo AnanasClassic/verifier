@@ -50,8 +50,9 @@ ARTIFACT_NAME = re.compile(r'[A-Za-z0-9_.-]{1,100}\Z')
 def caps(profile):
     """The profile's chain caps, refused when out of range (a profile is trusted, but a typo must not widen a cap).
     segment_parts (optional, 0 = none): each segment checks at most ⌈constants / segment_parts⌉ declarations, in a
-    new process. The memory that a segment keeps grows with the declarations it checks (#187, run 43564338682:
-    93,664 checked, peak 14.2 GB; 17,514 checked after an unchecked prefix of 93,664, peak 8.7 GB)."""
+    new process. It is limited to max_check_jobs + 1: the export job and the check jobs are the segments. It sets the
+    size of a segment, not its memory: the peak of a segment is the high-water mark of the heaviest part of its range
+    (#187, run 43564338682: 93,664 declarations checked, peak 14.2 GB; run 44945639361: 22,765 declarations checked, peak 14.2 GB)."""
     chain = profile.get('chain', {})
     if not isinstance(chain, dict) or set(chain) - {'max_build_jobs', 'max_check_jobs', 'max_hours', 'segment_parts'}:
         raise ValueError('chain must be an object with max_build_jobs, max_check_jobs, max_hours and segment_parts')
