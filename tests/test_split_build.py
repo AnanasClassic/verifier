@@ -32,7 +32,10 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(s.runner(sub('catalan')), 'github-chain')
         # 3SUM issues run split since 2026-11-02: issue #99 built for over 5 h 16 min in one job and timed out.
         self.assertEqual(s.runner(sub('3sum')), 'github-split')
-        for problem in ['dft', 'apsp', 'average-sensitivity', 'subset-sum']:
+        # DFT issues run split since task 8e55f343 (verifier#208, run 45012852925): one job built 771 chain targets for 259 min,
+        # then the 335-minute deadline killed the unit before the export. The dft233 entrypoint keeps its own one-job profile.
+        self.assertEqual(s.runner(sub('dft')), 'github-split')
+        for problem in ['apsp', 'average-sensitivity', 'subset-sum']:
             self.assertEqual(s.runner(sub(problem)), 'github')
         self.assertEqual(s.runner(dict(sub('dft', '7547360/10000000000'), entrypoint='dft233')), 'github')
         # Catalan opened on 2026-10-27.
@@ -53,7 +56,9 @@ class RunnerTests(unittest.TestCase):
                          {'issue_number': 5, 'login': 'x', 'route': 'issue', 'chain': True})
         self.assertEqual(s.matrix_entry(5, 'x', 'issue', sub('3sum')),
                          {'issue_number': 5, 'login': 'x', 'route': 'issue', 'split': True})
-        self.assertEqual(s.matrix_entry(5, 'x', 'issue', sub('dft')), {'issue_number': 5, 'login': 'x', 'route': 'issue'})
+        self.assertEqual(s.matrix_entry(5, 'x', 'issue', sub('dft')),
+                         {'issue_number': 5, 'login': 'x', 'route': 'issue', 'split': True})
+        self.assertEqual(s.matrix_entry(5, 'x', 'issue', sub('apsp')), {'issue_number': 5, 'login': 'x', 'route': 'issue'})
         # A PR request can have no submission (invalid layout); the PR route never splits.
         self.assertEqual(s.matrix_entry(6, 'y', 'pull_request', None), {'issue_number': 6, 'login': 'y', 'route': 'pull_request'})
 
@@ -132,14 +137,14 @@ class ChainTargetTests(unittest.TestCase):
     def test_split_writes_one_line(self):
         chains = [['Submission.A', 'Submission.B'], ['Submission.C', 'Submission']]
         profiles = json.loads((ROOT / 'profiles/direct.json').read_text())
-        for name in ['catalan', '3sum']:
+        for name in ['catalan', '3sum', 'dft']:
             with self.subTest(profile=name):
                 self.assertEqual(v.chain_targets(profiles[name], chains, True), 'Submission\n')
                 # A PR or maintainer run of a split profile has no build job: it keeps the chains.
                 self.assertEqual(v.chain_targets(profiles[name], chains, False), 'Submission.B\nSubmission\n')
-        self.assertEqual(v.chain_targets(profiles['dft'], chains, False), 'Submission.B\nSubmission\n')
+        self.assertEqual(v.chain_targets(profiles['apsp'], chains, False), 'Submission.B\nSubmission\n')
         with self.assertRaises(ValueError):
-            v.chain_targets(profiles['dft'], chains, True)
+            v.chain_targets(profiles['apsp'], chains, True)
 
 
 class SplitGateTests(unittest.TestCase):

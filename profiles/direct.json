@@ -14,7 +14,8 @@
     ],
     "bound_kind": "saving",
     "maximum": "1",
-    "upstream_commit": "fd4aeeb2ee4fc729c18d98444fed42fd0529eeeb"
+    "upstream_commit": "fd4aeeb2ee4fc729c18d98444fed42fd0529eeeb",
+    "runner": "github-split"
   },
   "3sum": {
     "challenge_file": "challenges/3sum-apsp/EndStatement.lean",
