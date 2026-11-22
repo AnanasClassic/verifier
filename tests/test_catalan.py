@@ -28,8 +28,8 @@ class StatementTests(unittest.TestCase):
         self.assertEqual(profile['challenge_sha256'], '9ba7370f1256ef680ccf674e653b5456735c478f9ac80fcffc90f130ac4a2ce6')
         self.assertEqual((profile['lean_toolchain'], profile['manifest_file'], profile['tools_file']),
                          ('leanprover/lean4:v4.34.1', 'profiles/lake-manifest.json', 'profiles/tools-chain.json'))
-        # Task 135cf916: a check chain since 2026-11-21 (0 of 8 one-job and split runs passed in the nine days before; a chain
-        # passed #187 in 2 segments at 14.0 and 8.7 GB). One first Lake worker; segment_parts 5 as the 3-SAT profile.
+        # Task 135cf916: a check chain since 2026-11-21 (1 of 8 one-job and split runs ended Lean Verified in the nine days before: #187, run 43148643813, Lean kernel
+        # passed, nanoda OOM-killed; a chain passed #187 in 2 segments at 14.0 and 8.7 GB, and again in run 44945639361). One first Lake worker; segment_parts 5 as the 3-SAT profile.
         self.assertEqual((profile['runner'], profile['lake_workers_start'], profile['chain']),
                          ('github-chain', 1, {'max_build_jobs': 4, 'max_check_jobs': 4, 'max_hours': 30, 'segment_parts': 5}))
         text = (CHALLENGE / 'Statement.lean').read_text()

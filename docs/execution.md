@@ -416,7 +416,7 @@ separate reviewed change.
 
 A profile with `"runner": "github-chain"` runs as a chain of hosted jobs in one workflow
 run (task b1457f08): `build1`..`build4`, `export`, `check1`..`check4` and `final`
-(`.github/workflows/submission-check.yml`, `scripts/chain.py`). `3sat` uses it since 2026-11-15 and `catalan` since task 135cf916 (2026-11-21; before, Catalan ran split: 1 of 8 runs from 2026-11-03 to 2026-11-14 ended Lean Verified (#187), with build OOM-kills at 4, 3 and 2 Lake workers and Lean kernel timeouts at 320 min). The Catalan profile has `lake_workers_start` 1 and `chain` 4 build jobs, 4 check jobs, 30 hours and `segment_parts` 5, as 3-SAT.
+(`.github/workflows/submission-check.yml`, `scripts/chain.py`). `3sat` uses it since 2026-11-15 and `catalan` since task 135cf916 (2026-11-21; before, Catalan ran split: 1 of 8 runs from 2026-11-03 to 2026-11-14 ended Lean Verified (#187, run 43148643813: the Lean kernel passed, nanoda was OOM-killed); the other 7 ended with build OOM-kills at 4, 3 and 2 Lake workers or Lean kernel timeouts at 320 min). The Catalan profile has `lake_workers_start` 1 and `chain` 4 build jobs, 4 check jobs, 30 hours and `segment_parts` 5, as 3-SAT.
 It is for proofs whose build, or whose kernel check, does not fit one 350-minute job
 (verifier#182: about 14 h of single-stream build left; the OpenAI 3-SAT proof: 3,091
 modules, 23 GB of build output). Every job is a standard free `ubuntu-24.04` runner with
@@ -511,6 +511,11 @@ submission file is built or loaded, so no tool comes from a job where submission
   check jobs get a swap file sized from the free disk of `/mnt`, less 10 GiB, from 16 to 64 GiB
   (`verifier.chain_swap_bytes`), and each job records the free disk of `/` and `/mnt` at its end
   (`chain_leg.disk_free_bytes`). Other units keep the 16 GiB file.
+  Measured with the final Catalan profile on #187's request (measure run 44945639361, 2026-11-21, old
+  receipt code: raw peaks with page cache): 7 h 01 min of the 30 h cap; one build job at 1 Lake worker
+  (228 min, 11.0 GB raw, no OOM-kill; build pack 627 MiB), then the export job (22 min, 5.4 GB) and 4
+  check jobs; the segments peaked at 2.1, 2.1, 4.4, 13.78 (92% of the cap) and 8.7 GB raw. Only
+  check3 warned. Its no-cache peak is not known from that run (`sampled_peak_nocache_bytes`, task 393f7f42).
 - **nanoda (a policy change, chain profiles only).** A chain runs no nanoda pass. On #187 it
   needed more than 26 GB. The receipt says `nanoda: incomplete (not_run_chain)`, and the
   verdict rule treats it like its other incomplete reasons (advisory), so a chain admits on
