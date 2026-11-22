@@ -143,3 +143,85 @@ def reason_line(receipt, reason):
             code = reason if isinstance(reason, str) and re.fullmatch(r'[a-z_]{1,60}', reason) else 'unknown'
             text = f'verifier code {code}'
     return f'Reason: {text}.'
+
+
+# The receipts that end WITHOUT a verdict on the proof (no_verdict): the rule of the site importer (data/direct_import.py of the site
+# repository: setup_failed, timed_out, chain_stopped, which give its decisions 'setup', 'timeout' and 'chain'), copied here because the
+# verifier cannot import the site. A requeue (queue_lease.py requeue, task 8b170a8c) is allowed only for these receipts. Keep both copies
+# equal: the tests pin this one on real receipts (tests/fixtures/receipts), and the site's own tests pin the importer's on its fixtures.
+CHAIN_CAP_REASONS = ('build_chain_cap', 'check_chain_cap')
+CHAIN_FAULT_REASONS = ('chain_coverage', 'no_segment_record', 'no_segment_receipt', 'export_not_run')
+
+
+def _dict(value):
+    return value if isinstance(value, dict) else {}
+
+
+def chain_receipt(receipt):
+    return _dict(receipt.get('profile')).get('runner') == 'github-chain'
+
+
+def proof_verdict(receipt):
+    """A kernel rejected the proof, or the audit reported a forbidden axiom: a verdict, never a time or chain stop."""
+    kernels = _dict(receipt.get('kernels'))
+    reported = _dict(_dict(receipt.get('axiom_audit')).get('reported_axioms'))
+    theorems = _dict(receipt.get('theorems'))
+    rejected = (_dict(kernels.get('lean')).get('status') == 'rejected' or _dict(kernels.get('nanoda')).get('status') == 'rejected'
+                or any(isinstance(t, dict) and 'rejected' in (t.get('lean_kernel'), t.get('nanoda_kernel')) for t in theorems.values()))
+    forbidden = any(not isinstance(axioms, list) or any(not isinstance(a, str) or a not in AXIOMS for a in axioms) for axioms in reported.values())
+    return rejected or forbidden
+
+
+def chain_lean_stop(receipt, reasons):
+    lean = _dict(_dict(receipt.get('kernels')).get('lean'))
+    audit = _dict(receipt.get('axiom_audit'))
+    return (chain_receipt(receipt) and lean.get('status') == 'incomplete' and lean.get('reason') in reasons
+            and audit.get('status', 'not_started') in ('passed', 'not_started'))
+
+
+def chain_stopped(receipt):
+    """A check chain stopped for a verifier problem before a verdict."""
+    return chain_lean_stop(receipt, CHAIN_FAULT_REASONS) and not proof_verdict(receipt)
+
+
+def timed_out(receipt):
+    """The verifier stopped the check for time: the receipt status is 'timeout' (the total deadline), or the Lean kernel is incomplete
+    with the reason 'timeout'; after Lean passed, when the audit stopped for time; in a check chain, a cap reason or an audit stop."""
+    kernels = _dict(receipt.get('kernels'))
+    lean = _dict(kernels.get('lean'))
+    audit = _dict(receipt.get('axiom_audit'))
+    if lean.get('status') == 'passed':
+        stopped = ((audit.get('status') == 'not_completed_or_rejected' and audit.get('systemd_result') == 'timeout' and not audit.get('guard_stop'))
+                   or (audit.get('status') == 'not_started' and receipt.get('status') == 'timeout'))
+    else:
+        stopped = receipt.get('status') == 'timeout' or (lean.get('status') == 'incomplete' and lean.get('reason') == 'timeout')
+        if chain_receipt(receipt) and lean.get('status') == 'incomplete' and lean.get('reason') in CHAIN_CAP_REASONS:
+            stopped = chain_lean_stop(receipt, CHAIN_CAP_REASONS)
+        export = _dict(receipt.get('chain_export'))
+        if chain_receipt(receipt) and lean.get('status') == 'not_started' and export.get('status') == 'passed':
+            stopped = ((audit.get('status') == 'not_completed_or_rejected' and audit.get('systemd_result') == 'timeout'
+                        and not audit.get('guard_stop')) or audit.get('status') == 'not_started')
+    return stopped and not proof_verdict(receipt)
+
+
+def setup_failed(receipt):
+    """The verifier failed before any proof check, and not for a fault of the submission (SETUP_ERRORS): our failure, not a verdict."""
+    kernels = _dict(receipt.get('kernels'))
+    return (receipt.get('status') == 'setup_failed' and receipt.get('error') not in SETUP_ERRORS
+            and _dict(kernels.get('lean')).get('status', 'not_started') == 'not_started'
+            and _dict(receipt.get('axiom_audit')).get('status', 'not_started') == 'not_started'
+            and _dict(kernels.get('nanoda')).get('status', 'not_started') in ('not_started', 'pending'))
+
+
+def no_verdict(receipt):
+    """'setup', 'timeout' or 'chain' when the receipt ends without a verdict on the proof (the importer's decisions of the same names, in
+    its order), else None. A passed, rejected or otherwise decided receipt is never one."""
+    if not isinstance(receipt, dict):
+        return None
+    if setup_failed(receipt):
+        return 'setup'
+    if timed_out(receipt):
+        return 'timeout'
+    if chain_stopped(receipt):
+        return 'chain'
+    return None

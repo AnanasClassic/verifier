@@ -1,0 +1,87 @@
+{
+  "artifact_sha256": {
+    "gate.json": "663c97409448eefed49b7f1df9925e81fdb774ee59e99aa8b83d93b5d9e73d72",
+    "selected-request.json": "621f82b4ff71dd30d3c19d84800f3a5c44037ce95b73eeafd86349c5f6553cf1",
+    "submission-fetch.log": "e7453c6dc500aaaa1021f84f9211ae0f9d8c309ea7dae88221bcde70770438f7",
+    "submission-init.log": "b0cb466a875c47cba4ca64cba0f001ef50a616dc50516bac9b66fd30769c2e1c"
+  },
+  "axiom_audit": {
+    "status": "not_started"
+  },
+  "checked_at": "2026-11-09T08:17:58.673001Z",
+  "error": "submission-fetch failed with exit 128; see artifact log",
+  "finished_unix": 1794212278.6730008,
+  "kernels": {
+    "lean": {
+      "status": "not_started"
+    },
+    "nanoda": {
+      "reason": "advisory_queued",
+      "status": "pending"
+    }
+  },
+  "profile": {
+    "bound_kind": "exponent",
+    "challenge_file": "challenges/catalan/Statement.lean",
+    "challenge_sha256": "9ba7370f1256ef680ccf674e653b5456735c478f9ac80fcffc90f130ac4a2ce6",
+    "lean_toolchain": "leanprover/lean4:v4.34.1",
+    "manifest_file": "profiles/lake-manifest.json",
+    "maximum": "100000000",
+    "runner": "github-split",
+    "solution_module": "Submission",
+    "source_roots": [
+      "Submission"
+    ],
+    "theorem_names": [
+      "Race.bound"
+    ],
+    "tools_file": "profiles/tools.json",
+    "upstream_commit": "50672b810873d8371b2b6bdd0057bb6cb2e3da24"
+  },
+  "request": {
+    "challenge_file": "challenges/catalan/Statement.lean",
+    "commit": "588b7d649184ed7c8c761db73ff1542932614fb3",
+    "direct_submission": {
+      "authors": [],
+      "bound": "295",
+      "commit": "588b7d649184ed7c8c761db73ff1542932614fb3",
+      "problem": "catalan",
+      "repo_url": "https://github.com/BigO-Hunter/catalan-295-litsey-port",
+      "schema_version": 1
+    },
+    "lean_toolchain": "leanprover/lean4:v4.34.1",
+    "repo_url": "https://github.com/BigO-Hunter/catalan-295-litsey-port",
+    "theorem_names": "Race.bound"
+  },
+  "run_url": "https://github.com/bigospeedrun/verifier/actions/runs/42584814300",
+  "schema_version": 1,
+  "started_unix": 1794212277.4543583,
+  "status": "setup_failed",
+  "steps": [
+    {
+      "exit_code": 0,
+      "name": "submission-init",
+      "wall_seconds": 0.004
+    },
+    {
+      "exit_code": 128,
+      "name": "submission-fetch",
+      "wall_seconds": 0.076
+    }
+  ],
+  "test_only": false,
+  "theorem_names": [
+    "Race.bound"
+  ],
+  "theorems": {
+    "Race.bound": {
+      "lean_kernel": "not_started",
+      "nanoda_kernel": "pending",
+      "reported_axioms": null,
+      "timing_group": "shared theorem closure"
+    }
+  },
+  "total_wall_seconds": 1.219,
+  "verification_stage": "final",
+  "verifier_commit": "e4195cbf8c813772227a5fe4fd21c03c0a1a4fa4"
+}

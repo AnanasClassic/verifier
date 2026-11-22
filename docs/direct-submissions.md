@@ -63,6 +63,28 @@ of comment count. Comment markers are display data, not deduplication authority.
 Reservations remain after proof or infrastructure failure; review handles an
 interrupted admission without an automatic retry loop.
 
+### Requeue after a failure on our side
+
+When a check ended in `timeout`, `setup_failed` or `chain_stopped` because of our own profile, runner or tooling (verifier#208: one job ran out
+of time, fixed by the split build), a maintainer starts the workflow `Verify direct submissions` by hand on the default branch with
+`requeue_issue` (the issue number) and `requeue_reason` (1 to 200 printable ASCII characters). That run does nothing else: it takes the
+lease (it is refused while a proof run holds it) and removes the one admission record of that version of the issue, so that the next scan
+admits it again. It is refused, with nothing changed, unless all of these hold:
+
+- the public site trust file (`data/direct-trust.json` of the site repository) lists the controller blobs of this verifier commit, so the
+  importer accepts the receipt of the rerun (push the site trust commit first);
+- the issue is open, has the submission form, is not a maintainer test issue, and its current version has an admission record (an edited
+  form is a new version and needs no requeue; a PR has its own key with the head sha);
+- the receipt of the run that the record names ended without a verdict on the proof, by the one rule that the site importer uses for its
+  decisions `timeout`, `chain` and `setup` (`verdicts.no_verdict`: a total or Lean time limit, a check chain cap or verifier fault, or a setup
+  failure that is not the submission's own fault). A pass, a rejection, a forbidden axiom, an out-of-memory stop and an axiom audit that did not
+  complete are verdicts or other results and are never requeued; and that run used another verifier commit than this one (our code changed
+  since);
+- the issue was not requeued before at this verifier commit: the lease tree keeps `requeued/<issue>-<commit>.json` with the issue, the old run
+  and its decision, both verifier commits, the reason, the account and the run.
+
+Run order: first the site trust commit of the new verifier commit (the run refuses otherwise), then the dispatch. The scan still never retries by itself. The change is one commit of the lease ref (`force: false`), with a read-back in the run.
+
 ## Security boundary
 
 Every job runs trusted default-branch code at the event SHA. No job checks out

@@ -1,0 +1,20 @@
+{
+  "artifact_sha256": {
+    "gate.json": "8f465ae8808a0f0029eab91f9e3e9e894e8dfc62980b0bfc9108357755f943ba",
+    "selected-request.json": "dac1733e9e4787ba7c22971e5d5e45d99fd8cf512d1486ab9365f31648fce888"
+  },
+  "checked_at": "2026-11-02T17:48:27.582270Z",
+  "finished_unix": 1793641707.5822704,
+  "kernels": {
+    "nanoda": {
+      "reason": "advisory_queued",
+      "status": "pending"
+    }
+  },
+  "schema_version": 1,
+  "status": "setup_failed",
+  "steps": [],
+  "theorems": {},
+  "total_wall_seconds": 0.0,
+  "verification_stage": "final"
+}

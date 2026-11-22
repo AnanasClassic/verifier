@@ -15,10 +15,38 @@ on:
         description: Test issue or PR number (fixed fixtures only; Catalan needs a maintainer issue with label test)
         type: string
         default: ''
+      requeue_issue:
+        description: Maintainer-only requeue (task 8b170a8c) - the issue number whose admission record is removed after a timeout on OUR side; this run then does nothing else
+        type: string
+        default: ''
+      requeue_reason:
+        description: Requeue reason (1 to 200 printable ASCII characters), kept in the lease tree
+        type: string
+        default: ''
 permissions: {}
 jobs:
+  # A requeue run (requeue_issue set) runs only this job: it needs write access to dispatch, the default branch, and the lease.
+  requeue:
+    if: github.ref == 'refs/heads/main' && format('{0}', inputs.requeue_issue) != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      issues: read
+      actions: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      # The values enter as environment variables, never as shell text (docs/direct-submissions.md, security boundary).
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          REQUEUE_ISSUE: ${{ inputs.requeue_issue }}
+          REQUEUE_REASON: ${{ inputs.requeue_reason }}
+        run: python3 scripts/queue_lease.py requeue
   select:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && format('{0}', inputs.requeue_issue) == ''
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:

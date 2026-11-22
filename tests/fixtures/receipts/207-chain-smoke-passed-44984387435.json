@@ -1,0 +1,1008 @@
+{
+  "artifact_sha256": {
+    "apt-tools.log": "1da95078cc21fdd9ecaad185030795bc5d15c6d9073379aa3087d9bf390d2255",
+    "apt-update.log": "d734ca4577e6e323457ee172afd4c112a4841ee9e368b5810792df5b82004e52",
+    "audit.log": "c80bf3384e5dbcfe97eb413b8545b06d64d6e29ffa293e4e6a46eb370219344d",
+    "build-comparator.log": "b4d476203bc915ee7f66cc8f8f84d433ab17a042e35adb6b04bc41d343163808",
+    "build-lake-adapter.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-landrun.log": "5e09e7add5ffb69e6ec818cd8417bef048ede8025e5a71a6dc067b62b9776191",
+    "build-nanoda.log": "90b94d8519966b8b6d9b82471853479f727bc9f4128cceac8b488fa3a7654768",
+    "build-nattest.log": "0b0d358a67af41e0d2b25870621a431dc7c5c83161bb79bc42d16f61d13dd554",
+    "build.log": "b1083a7c7de02bc792bfa79264a98cb1e64651caea6cf96e3d024c286ed13ac9",
+    "bwrap-apparmor-policy.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cache-hash-metadata.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "chain-build1-receipt.json": "7d92532b45ede14ce0be0e1e3db2e158708cfde1005f2888474cbbd00170d49f",
+    "chain-check1-receipt.json": "28fac04621c313bb6adfd97b00a7bb033c2459595b6cf5ce7ba5b432e5bee770",
+    "chain-check2-receipt.json": "e663b188a49d9e8f01dc1eba6b1127c95bf454c4eca9c88ef5ef562f045b4019",
+    "chain-check3-receipt.json": "d53ccf7083ef76f707a1bbc7b907588a3a099e67e00c0503c528aa74876d1b0b",
+    "chain-check4-receipt.json": "4bb114e1b333f4a7617bedd0fc1f49d535d26572ddf5b757fe7c1df0a79b429d",
+    "chain-export-receipt.json": "e67c99d902b12c7ad8e236145b58ac624122ed1d0f78a8aebb94474e226561e3",
+    "challenge.log": "867df5e83177db5e3a463809ace512e0e5decddf46e79d58b2bc40f2a72357d8",
+    "check-check1.log": "d34e09c84166c322db2cff9c6f014ddc5072e79cb44bb92446381d0014967f37",
+    "check-check2.log": "f3ae51fd5cb289b62bebfbc17c7fda09bb93efea85ebb950876368840f23e698",
+    "check-check3.log": "e902eb75558faf5e332b25f120a4568dfe5dce4c4a53bcf9470769ac25cf3c45",
+    "check-check4.log": "e3f01836c9d6ee7d21235d546d0b6d81297cfb68585e012c5919e2b4f575dc64",
+    "check-export.log": "da883df5b9c8d7e417af4046def43e1c14c7b2adc2f2b190a3055028cafceb79",
+    "dependency-Cli-checkout.log": "c898721f43d1332795805fed225fb2ab0595c7b8a029c4a9e3c437473521b5e8",
+    "dependency-Cli-fetch.log": "9094417b7a563375dd9f98605caa2f2cb0cc73077b2c498eb7c101dc1bab279b",
+    "dependency-Cli-init.log": "806fb9690dbeea89238e99f8dd297b5af2e0e0f565af71af6f5626a6d61faf3e",
+    "dependency-LeanSearchClient-checkout.log": "7d98119a745a3443f54178ab9619295af66435d735ac04882e276a8a9bffaea1",
+    "dependency-LeanSearchClient-fetch.log": "5b5559b62e0b216d5e13b67a4ba1a230afd09f8c0995af59c8c828c43fc294b7",
+    "dependency-LeanSearchClient-init.log": "7da5337a0fc32514d71481e6bd805dea2161c22056ea299c1b9ad45e663240a9",
+    "dependency-Qq-checkout.log": "ad1b37dbf80199957a96283ccce1b75fb04305981124e49cbdc24d12437c8198",
+    "dependency-Qq-fetch.log": "13597b5d2e96d90eee3ebcc349f5dc29db0615761725a2bd30fd372e037695f3",
+    "dependency-Qq-init.log": "ffa3697aed5c4505fa7b759ea58199632d47708e338d7c844267b2c5754d61e1",
+    "dependency-aesop-checkout.log": "de5e1aa3ee75894a89798703b227a067c3e877d93dafb5419dc70b86ccc109a6",
+    "dependency-aesop-fetch.log": "88e03fded2183f72ff02d3f8bbf8f8bfb95b4bfd69babb6039e2df0cb7f1721e",
+    "dependency-aesop-init.log": "ddfe172f4b698d0ac102ac2178f4280b00372368ef06591a3952fcc668834fc3",
+    "dependency-batteries-checkout.log": "6816a3fef77fa1286c37b8e56ca42c77a51ad242dbb758bfd9f4de43ec50cb06",
+    "dependency-batteries-fetch.log": "116ec193ab5389d576971f2f8a288a9f9fe82744a84da6da90ce289f1e330eda",
+    "dependency-batteries-init.log": "2aba402bb7545f350f21c752a73448002dc8b209f4963bde1df90ea8266b5a91",
+    "dependency-importGraph-checkout.log": "6a4ee8a98d7afdb48cb4c55be58ed0efeaeeefdfb3bf6468909bec14e6aa28b4",
+    "dependency-importGraph-fetch.log": "7c91610e786ab9296071b4bebd42fc455236dd285c2d40beb476b5120c36e605",
+    "dependency-importGraph-init.log": "a48fa1c744a9cebca87074efdb8cfbcb7d6cbaae8af8d46f504f4223c9a551bc",
+    "dependency-mathlib-checkout.log": "a0bb7af7ae0fa5e2cc405332624d7b50a0ed8d31605c0b4b526558ffd20d50a1",
+    "dependency-mathlib-fetch.log": "56a9c709fa42a138a71cef4abafc00e97d480b8e106800c3c34fa21edbceed12",
+    "dependency-mathlib-init.log": "2bcb292b69734b9db2ced338b6ac726cedc20827a6780104169f95f2d66c1b73",
+    "dependency-plausible-checkout.log": "5c722697c8d43ea73fde7079343e63c3bb58b408427b579f6a98f114b2c27ae3",
+    "dependency-plausible-fetch.log": "58688df170d3968e90c11f7fe16f1957ca189393874ba37e84fae3631b9d6b26",
+    "dependency-plausible-init.log": "4077b7e1977b1b77945885d54ad3705e70446164adda8a0c5d8844827b97eb72",
+    "dependency-proofwidgets-checkout.log": "be10a7d449140089e34615969c9fe1a689688c806b5a3f09ce38b17fb6d28794",
+    "dependency-proofwidgets-fetch.log": "5bac8844efd0a2d90aa71757fd8825ed40852e654732b3e51c2e71184e330a1d",
+    "dependency-proofwidgets-init.log": "4c883bd1450aa7a672b32e14df04922d40e349467c3d76da18d2643ce6e1a397",
+    "elan-download.log": "65fd6aa636118de53282592abe65c218760d25e5d24d036927f4e837df2900ea",
+    "elan-install.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "elan-unpack.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "export.log": "fa2516bd9f0ba2ad1471d4c849a2cf20f5c009cc2b67fb4eef1379341dc81ecf",
+    "gate.json": "15bb8cb1e2eb09f785aa2231c865c9d86991d843a5e737fb1ba28fc068ca2f06",
+    "kernel-swap-allocate.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "kernel-swap-enable.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "kernel-swap-format.log": "e25fa344198d1bdcd6514baec82556c4440998bae060086eca8247ba8f3da54a",
+    "kernel-swap-permissions.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "lean-install.log": "5082da115170ffc8e18b06c074600b98284ad5dcaf4a1b3b14ae66bfbeb1796c",
+    "lean-path.log": "4f4f34f1bc4f5cab4255fa6d759fcd684cc6ad06ff5c31a6167dae82ea282c16",
+    "mathlib-cache.log": "85e8987bc2b5b5f988b7b2f944f1d7a2de37166e7101e08776dbfde27deeae8e",
+    "nattest.log": "db29daa57a2709a84baf6399d15e513233fdca5e984588bd873f828da9853862",
+    "runner-sdk-space.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sandbox-preflight.log": "41648742f98aab2171f9eb88297548170de3f3b760e7c07ef9fcc94aedd69355",
+    "segment-selftest-continue.log": "2841a9016900af7922ae5ca3ec28e466360acd66fd008a65d50d15ba45b2dfe4",
+    "segment-selftest-deadline.log": "e2536e2412efaca18e1ad3b9d6df8ae79091203509e95a4239ccfc308659a485",
+    "segment-selftest-parts.log": "365315b5aa5495b93ea5fdcb126247c6b064923d52d5e8f3e97df2639ccc660a",
+    "segment-selftest.json": "f3072bb1892ad6b822a970d854df23c99ac802596cda2bc06560f3baddedf072",
+    "segment-selftest.log": "dea0c2ba29238d3b1f09a0871c812032dcda38ef870c3b9c4bd068edf0baf40f",
+    "selected-request.json": "5737ff1982f709631c2fa7845890b4f1e5998824b452a71cb5bf02bc104e96a2",
+    "source-sha256.json": "58645a46957a78cbe7b3d0875216432f69f8be9b6bf0615eba2928240d1a293d",
+    "submission-checkout.log": "7b51f457b8dbe82d1e7d8346a47395a7d579f3091798456f5b89bcf7a14463bf",
+    "submission-fetch.log": "2da102c3b2a1550674cd43f0749de129a3a3f42d998010f1e6e8277b59f0c9c2",
+    "submission-init.log": "b0cb466a875c47cba4ca64cba0f001ef50a616dc50516bac9b66fd30769c2e1c",
+    "tool-comparator-checkout.log": "3c2feb74939b9406dafa0cb51c8c8e3dfe3699b74c1601779505d0710b48e416",
+    "tool-comparator-fetch.log": "9261bb13765d6f67a340db2c08ec13cde32a1692ae58e6a0ec5aa9c47602c0da",
+    "tool-comparator-init.log": "8e15416f568c947d6b68e42b7ac7e7d538a5d80d8cf6cdd58d2dde6fc25a880d",
+    "tool-comparator-patch-check-comparator-segmented-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tool-comparator-patch-comparator-segmented-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tool-exporter-checkout.log": "d4f2490c3adcc8a16a8dfbe64d206920e721444b20d42612fae9a14686be2737",
+    "tool-exporter-fetch.log": "4679263f7ddb25fedf2f8f6fdefa03853ca318c1ca9b9e61b634e859cee32b2e",
+    "tool-exporter-init.log": "018b405fedf95d297837cdacc99659adb689b297c8717951de499143b20a5b6b",
+    "tool-exporter-patch-check-lean4export-natlit-parse.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tool-exporter-patch-check-lean4export-pr52-natlit-print.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tool-exporter-patch-lean4export-natlit-parse.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tool-exporter-patch-lean4export-pr52-natlit-print.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tool-landrun-checkout.log": "d79c67290ceb531c3a58de807a7fa90ffb38fef022cb06beb789045ad1150093",
+    "tool-landrun-fetch.log": "5236b9fb8cd4e085ff194e356bb8f7235b824d3598b30e372ba59a226fc326e8",
+    "tool-landrun-init.log": "a9eb19dc8f9948571af0e040de262ccf9b0afad041ed34b8a563ba78daac7eda",
+    "tool-nanoda-checkout.log": "1742125a8fcb0f116dde29abd4986b2b3760c293de3a2bdb1a2dc811c5bfe208",
+    "tool-nanoda-fetch.log": "fe5e4563df306b10c17a90cc13543aa66cb53d35d5b2d71a807012324d981461",
+    "tool-nanoda-init.log": "0823fe50f87fc13c0edb7540c3847aa4be35620dabf31ab1809f8abaa36ccc6d",
+    "tool-sha256.json": "ef8bebe07fdc4c2b9ebbae08b222f0d2652944f14682f553fa7b387ca9839151",
+    "trusted-lake-config.log": "355a9a028f81641782d75d6e6b58dec70f29d2f61238a9e271690259d9bf5680"
+  },
+  "axiom_audit": {
+    "exit_code": 0,
+    "guard_stop": null,
+    "log": "audit.log",
+    "memory_limit_bytes": 15032385536,
+    "reported_axioms": {
+      "Race.bound": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    "sampled_peak_cgroup_bytes": 543244288,
+    "sampled_peak_nocache_bytes": 356531264,
+    "sampled_peak_swap_bytes": 0,
+    "sampled_peak_tasks": 24,
+    "status": "passed",
+    "swap_limit_bytes": 0,
+    "systemd_result": "success",
+    "tasks_limit": 4096,
+    "wall_seconds": 3.012
+  },
+  "build": {
+    "attempts": [
+      {
+        "exit_code": 0,
+        "guard_stop": null,
+        "lake_jobs": 1,
+        "memory_limit_bytes": 15032385536,
+        "sampled_peak_cgroup_bytes": 6107631616,
+        "sampled_peak_nocache_bytes": 4867429264,
+        "sampled_peak_swap_bytes": 0,
+        "sampled_peak_tasks": 61,
+        "swap_limit_bytes": 0,
+        "systemd_result": "success",
+        "tasks_limit": 4096,
+        "wall_seconds": 14277.246
+      }
+    ],
+    "exit_code": 0,
+    "guard_stop": null,
+    "log": "build.log",
+    "memory_limit_bytes": 15032385536,
+    "sampled_peak_cgroup_bytes": 6107631616,
+    "sampled_peak_nocache_bytes": 4867429264,
+    "sampled_peak_swap_bytes": 0,
+    "sampled_peak_tasks": 61,
+    "swap_limit_bytes": 0,
+    "systemd_result": "success",
+    "tasks_limit": 4096,
+    "wall_seconds": 14277.246
+  },
+  "chain": {
+    "legs": [
+      {
+        "leg": "build1",
+        "receipt": "chain-build1-receipt.json",
+        "receipt_sha256": "7d92532b45ede14ce0be0e1e3db2e158708cfde1005f2888474cbbd00170d49f",
+        "result": "success",
+        "state": {
+          "build": "done",
+          "disk_free_bytes": {
+            "/": 98475958272,
+            "/mnt": 98475958272
+          },
+          "gate_sha256": "15bb8cb1e2eb09f785aa2231c865c9d86991d843a5e737fb1ba28fc068ca2f06",
+          "leg": "build1",
+          "outcome": null
+        }
+      },
+      {
+        "leg": "export",
+        "receipt": "chain-export-receipt.json",
+        "receipt_sha256": "e67c99d902b12c7ad8e236145b58ac624122ed1d0f78a8aebb94474e226561e3",
+        "result": "success",
+        "state": {
+          "disk_free_bytes": {
+            "/": 35016822784,
+            "/mnt": 35016822784
+          },
+          "gate_sha256": "15bb8cb1e2eb09f785aa2231c865c9d86991d843a5e737fb1ba28fc068ca2f06",
+          "leg": "export"
+        }
+      },
+      {
+        "leg": "check1",
+        "receipt": "chain-check1-receipt.json",
+        "receipt_sha256": "28fac04621c313bb6adfd97b00a7bb033c2459595b6cf5ce7ba5b432e5bee770",
+        "result": "success",
+        "state": {
+          "disk_free_bytes": {
+            "/": 32128860160,
+            "/mnt": 32128860160
+          },
+          "leg": "check1"
+        }
+      },
+      {
+        "leg": "check2",
+        "receipt": "chain-check2-receipt.json",
+        "receipt_sha256": "e663b188a49d9e8f01dc1eba6b1127c95bf454c4eca9c88ef5ef562f045b4019",
+        "result": "success",
+        "state": {
+          "disk_free_bytes": {
+            "/": 32128876544,
+            "/mnt": 32128876544
+          },
+          "leg": "check2"
+        }
+      },
+      {
+        "leg": "check3",
+        "receipt": "chain-check3-receipt.json",
+        "receipt_sha256": "d53ccf7083ef76f707a1bbc7b907588a3a099e67e00c0503c528aa74876d1b0b",
+        "result": "success",
+        "state": {
+          "disk_free_bytes": {
+            "/": 32123809792,
+            "/mnt": 32123809792
+          },
+          "leg": "check3"
+        }
+      },
+      {
+        "leg": "check4",
+        "receipt": "chain-check4-receipt.json",
+        "receipt_sha256": "4bb114e1b333f4a7617bedd0fc1f49d535d26572ddf5b757fe7c1df0a79b429d",
+        "result": "success",
+        "state": {
+          "disk_free_bytes": {
+            "/": 35701739520,
+            "/mnt": 35701739520
+          },
+          "leg": "check4"
+        }
+      }
+    ]
+  },
+  "chain_challenge": {
+    "attempts": [
+      {
+        "exit_code": 0,
+        "guard_stop": null,
+        "lake_jobs": 1,
+        "memory_limit_bytes": 15032385536,
+        "sampled_peak_cgroup_bytes": 710234112,
+        "sampled_peak_nocache_bytes": 703714600,
+        "sampled_peak_swap_bytes": 0,
+        "sampled_peak_tasks": 30,
+        "swap_limit_bytes": 0,
+        "systemd_result": "success",
+        "tasks_limit": 4096,
+        "wall_seconds": 7.016
+      }
+    ],
+    "exit_code": 0,
+    "guard_stop": null,
+    "log": "challenge.log",
+    "memory_limit_bytes": 15032385536,
+    "reason": "comparator_acceptance",
+    "sampled_peak_cgroup_bytes": 710234112,
+    "sampled_peak_nocache_bytes": 703714600,
+    "sampled_peak_swap_bytes": 0,
+    "sampled_peak_tasks": 30,
+    "status": "passed",
+    "swap_limit_bytes": 0,
+    "systemd_result": "success",
+    "tasks_limit": 4096,
+    "wall_seconds": 7.017
+  },
+  "chain_export": {
+    "attempts": [
+      {
+        "exit_code": 0,
+        "guard_stop": null,
+        "lake_jobs": 1,
+        "memory_limit_bytes": 15032385536,
+        "sampled_peak_cgroup_bytes": 2164961280,
+        "sampled_peak_nocache_bytes": 2148609536,
+        "sampled_peak_swap_bytes": 0,
+        "sampled_peak_tasks": 30,
+        "swap_limit_bytes": 68719476736,
+        "systemd_result": "success",
+        "tasks_limit": 4096,
+        "wall_seconds": 36.029
+      }
+    ],
+    "exit_code": 0,
+    "files": {
+      "challenge": {
+        "bytes": 69559730,
+        "compressed_bytes": 12036065,
+        "sha256": "08826a01d11e8a0f6f11015a6a38d71002f505ac763f5e8e9bcca9e98dcb77dd"
+      },
+      "solution": {
+        "bytes": 691695231,
+        "compressed_bytes": 115386138,
+        "sha256": "0aaaa80532e5337de92d73721e4192fb63a6f8785caf5a2e73d421ee28011a25"
+      }
+    },
+    "guard_stop": null,
+    "log": "export.log",
+    "memory_limit_bytes": 15032385536,
+    "reason": "comparator_acceptance",
+    "sampled_peak_cgroup_bytes": 2164961280,
+    "sampled_peak_nocache_bytes": 2148609536,
+    "sampled_peak_swap_bytes": 0,
+    "sampled_peak_tasks": 30,
+    "status": "passed",
+    "swap_limit_bytes": 68719476736,
+    "systemd_result": "success",
+    "tasks_limit": 4096,
+    "wall_seconds": 36.03
+  },
+  "check_summary": {
+    "axiom_audit": "passed",
+    "lean": "passed (segmented_comparator_acceptance)",
+    "nanoda": "incomplete (not_run_chain)"
+  },
+  "checked_at": "2026-11-22T11:04:43.782167Z",
+  "finished_unix": 1795345483.7821672,
+  "generated_challenge_sha256": "665c79be55f9940f1410fe849439e9dc260418ff9b160909c0f756eff1dc02a6",
+  "kernels": {
+    "lean": {
+      "declarations": 79130,
+      "reason": "segmented_comparator_acceptance",
+      "segments": 5,
+      "segments_detail": [
+        {
+          "from": 0,
+          "leg": "export",
+          "log": "check-export.log",
+          "reason": null,
+          "sampled_peak_cgroup_bytes": 1118863360,
+          "sampled_peak_nocache_bytes": 1107545656,
+          "segment": {
+            "from": 0,
+            "parse_ms": 21682,
+            "replay_ms": 6196,
+            "status": "stopped",
+            "to": 16284,
+            "todo_constants": 81415
+          },
+          "status": "linked",
+          "systemd_result": "success",
+          "wall_seconds": 29.024
+        },
+        {
+          "from": 16284,
+          "leg": "check1",
+          "log": "check-check1.log",
+          "reason": null,
+          "sampled_peak_cgroup_bytes": 1054232576,
+          "sampled_peak_nocache_bytes": 1050158568,
+          "segment": {
+            "from": 16284,
+            "parse_ms": 23795,
+            "replay_ms": 18374,
+            "status": "stopped",
+            "to": 32568,
+            "todo_constants": 81415
+          },
+          "status": "linked",
+          "systemd_result": "success",
+          "wall_seconds": 44.04
+        },
+        {
+          "from": 32568,
+          "leg": "check2",
+          "log": "check-check2.log",
+          "reason": null,
+          "sampled_peak_cgroup_bytes": 1055260672,
+          "sampled_peak_nocache_bytes": 1048898784,
+          "segment": {
+            "from": 32568,
+            "parse_ms": 14432,
+            "replay_ms": 35893,
+            "status": "stopped",
+            "to": 48852,
+            "todo_constants": 81415
+          },
+          "status": "linked",
+          "systemd_result": "success",
+          "wall_seconds": 52.035
+        },
+        {
+          "from": 48852,
+          "leg": "check3",
+          "log": "check-check3.log",
+          "reason": null,
+          "sampled_peak_cgroup_bytes": 1642881024,
+          "sampled_peak_nocache_bytes": 1626242536,
+          "segment": {
+            "from": 48852,
+            "parse_ms": 20536,
+            "replay_ms": 1763926,
+            "status": "stopped",
+            "to": 65136,
+            "todo_constants": 81415
+          },
+          "status": "linked",
+          "systemd_result": "success",
+          "wall_seconds": 1785.872
+        },
+        {
+          "from": 65136,
+          "leg": "check4",
+          "log": "check-check4.log",
+          "reason": null,
+          "sampled_peak_cgroup_bytes": 4851781632,
+          "sampled_peak_nocache_bytes": 4832579056,
+          "segment": {
+            "from": 65136,
+            "parse_ms": 16458,
+            "replay_ms": 6513925,
+            "status": "passed",
+            "to": 79130,
+            "todo_constants": 81415
+          },
+          "status": "linked",
+          "systemd_result": "success",
+          "wall_seconds": 6532.148
+        }
+      ],
+      "status": "passed"
+    },
+    "nanoda": {
+      "reason": "not_run_chain",
+      "status": "incomplete"
+    }
+  },
+  "lake_workers": 1,
+  "lean_path": [
+    "/home/runner/work/_temp/bos-verifier/stage/.lake/packages/Cli/.lake/build/lib/lean",
+    "/home/runner/work/_temp/bos-verifier/stage/.lake/packages/batteries/.lake/build/lib/lean",
+    "/home/runner/work/_temp/bos-verifier/stage/.lake/packages/Qq/.lake/build/lib/lean",
+    "/home/runner/work/_temp/bos-verifier/stage/.lake/packages/aesop/.lake/build/lib/lean",
+    "/home/runner/work/_temp/bos-verifier/stage/.lake/packages/proofwidgets/.lake/build/lib/lean",
+    "/home/runner/work/_temp/bos-verifier/stage/.lake/packages/importGraph/.lake/build/lib/lean",
+    "/home/runner/work/_temp/bos-verifier/stage/.lake/packages/LeanSearchClient/.lake/build/lib/lean",
+    "/home/runner/work/_temp/bos-verifier/stage/.lake/packages/plausible/.lake/build/lib/lean",
+    "/home/runner/work/_temp/bos-verifier/stage/.lake/packages/mathlib/.lake/build/lib/lean",
+    "/home/runner/work/_temp/bos-verifier/stage/.lake/build/lib/lean",
+    "/home/runner/work/_temp/bos-verifier/tools/elan/toolchains/leanprover--lean4---v4.34.1/lib/lean"
+  ],
+  "pack": {
+    "bytes": 484293089,
+    "compressed_bytes": 122310461,
+    "files": 22304,
+    "members": 22362,
+    "setup_json_skipped": 1488,
+    "sha256": "62683136c5430ded9027d21f3663651a84f1632733ef36fecd3a01cbf3a235c6",
+    "skipped_count": 0,
+    "skipped_first": []
+  },
+  "profile": {
+    "bound_kind": "exponent",
+    "chain": {
+      "max_build_jobs": 4,
+      "max_check_jobs": 4,
+      "max_hours": 30,
+      "segment_parts": 5
+    },
+    "challenge_file": "challenges/catalan/Statement.lean",
+    "challenge_sha256": "9ba7370f1256ef680ccf674e653b5456735c478f9ac80fcffc90f130ac4a2ce6",
+    "lake_workers_start": 1,
+    "lean_toolchain": "leanprover/lean4:v4.34.1",
+    "manifest_file": "profiles/lake-manifest.json",
+    "maximum": "100000000",
+    "runner": "github-chain",
+    "solution_module": "Submission",
+    "source_roots": [
+      "Submission"
+    ],
+    "theorem_names": [
+      "Race.bound"
+    ],
+    "tools_file": "profiles/tools-chain.json",
+    "upstream_commit": "50672b810873d8371b2b6bdd0057bb6cb2e3da24"
+  },
+  "request": {
+    "challenge_file": "challenges/catalan/Statement.lean",
+    "commit": "a3d48494df743e8dbf2dd5acb70dbe27759069e0",
+    "direct_submission": {
+      "authors": [],
+      "bound": "1091",
+      "commit": "a3d48494df743e8dbf2dd5acb70dbe27759069e0",
+      "problem": "catalan",
+      "repo_url": "https://github.com/bigospeedrun/verifier-smoke-catalan",
+      "schema_version": 1
+    },
+    "lean_toolchain": "leanprover/lean4:v4.34.1",
+    "repo_url": "https://github.com/bigospeedrun/verifier-smoke-catalan",
+    "theorem_names": "Race.bound"
+  },
+  "resource_report": {
+    "units": [
+      {
+        "memory_nocache_ratio": 0.324,
+        "memory_peak_ratio": 0.406,
+        "unit": "build attempt 1 (1 Lake workers)",
+        "wall_ratio": 0.71,
+        "warn": []
+      },
+      {
+        "memory_nocache_ratio": 0.024,
+        "memory_peak_ratio": 0.036,
+        "unit": "axiom_audit",
+        "wall_ratio": 0.0,
+        "warn": []
+      },
+      {
+        "memory_nocache_ratio": 0.047,
+        "memory_peak_ratio": 0.047,
+        "unit": "chain_challenge attempt 1",
+        "wall_ratio": 0.0,
+        "warn": []
+      },
+      {
+        "memory_nocache_ratio": 0.143,
+        "memory_peak_ratio": 0.144,
+        "swap_peak_ratio": 0.0,
+        "unit": "chain_export attempt 1",
+        "wall_ratio": 0.002,
+        "warn": []
+      },
+      {
+        "memory_nocache_ratio": 0.074,
+        "memory_peak_ratio": 0.074,
+        "unit": "lean segment export",
+        "wall_ratio": 0.001,
+        "warn": []
+      },
+      {
+        "memory_nocache_ratio": 0.07,
+        "memory_peak_ratio": 0.07,
+        "unit": "lean segment check1",
+        "wall_ratio": 0.002,
+        "warn": []
+      },
+      {
+        "memory_nocache_ratio": 0.07,
+        "memory_peak_ratio": 0.07,
+        "unit": "lean segment check2",
+        "wall_ratio": 0.003,
+        "warn": []
+      },
+      {
+        "memory_nocache_ratio": 0.108,
+        "memory_peak_ratio": 0.109,
+        "unit": "lean segment check3",
+        "wall_ratio": 0.089,
+        "warn": []
+      },
+      {
+        "memory_nocache_ratio": 0.321,
+        "memory_peak_ratio": 0.323,
+        "unit": "lean segment check4",
+        "wall_ratio": 0.325,
+        "warn": []
+      }
+    ],
+    "warn_ratio": 0.8,
+    "warning": false,
+    "warnings": []
+  },
+  "run_url": "https://github.com/bigospeedrun/verifier/actions/runs/44984387435",
+  "schema_version": 1,
+  "solution_dependencies": [],
+  "source_file_count": 2622,
+  "started_unix": 1795335602.6921284,
+  "status": "passed",
+  "status_reason": "lean_and_axiom_passed_nanoda_incomplete",
+  "steps": [
+    {
+      "exit_code": 0,
+      "name": "submission-init",
+      "wall_seconds": 0.002
+    },
+    {
+      "exit_code": 0,
+      "name": "submission-fetch",
+      "wall_seconds": 0.249
+    },
+    {
+      "exit_code": 0,
+      "name": "submission-checkout",
+      "wall_seconds": 0.073
+    },
+    {
+      "exit_code": 0,
+      "name": "apt-update",
+      "wall_seconds": 9.735
+    },
+    {
+      "exit_code": 0,
+      "name": "apt-tools",
+      "wall_seconds": 10.118
+    },
+    {
+      "exit_code": 0,
+      "name": "bwrap-apparmor-policy",
+      "wall_seconds": 0.011
+    },
+    {
+      "exit_code": 0,
+      "name": "runner-sdk-space",
+      "wall_seconds": 110.494
+    },
+    {
+      "exit_code": 0,
+      "name": "elan-download",
+      "wall_seconds": 0.074
+    },
+    {
+      "exit_code": 0,
+      "name": "elan-unpack",
+      "wall_seconds": 0.079
+    },
+    {
+      "exit_code": 0,
+      "name": "elan-install",
+      "wall_seconds": 0.013
+    },
+    {
+      "exit_code": 0,
+      "name": "lean-install",
+      "wall_seconds": 7.756
+    },
+    {
+      "exit_code": 0,
+      "name": "tool-comparator-init",
+      "wall_seconds": 0.051
+    },
+    {
+      "exit_code": 0,
+      "name": "tool-comparator-fetch",
+      "wall_seconds": 0.133
+    },
+    {
+      "exit_code": 0,
+      "name": "tool-comparator-checkout",
+      "wall_seconds": 0.01
+    },
+    {
+      "exit_code": 0,
+      "name": "tool-exporter-init",
+      "wall_seconds": 0.068
+    },
+    {
+      "exit_code": 0,
+      "name": "tool-exporter-fetch",
+      "wall_seconds": 0.13
+    },
+    {
+      "exit_code": 0,
+      "name": "tool-exporter-checkout",
+      "wall_seconds": 0.007
+    },
+    {
+      "exit_code": 0,
+      "name": "tool-exporter-patch-check-lean4export-pr52-natlit-print",
+      "wall_seconds": 0.001
+    },
+    {
+      "exit_code": 0,
+      "name": "tool-exporter-patch-lean4export-pr52-natlit-print",
+      "wall_seconds": 0.001
+    },
+    {
+      "exit_code": 0,
+      "name": "tool-exporter-patch-check-lean4export-natlit-parse",
+      "wall_seconds": 0.001
+    },
+    {
+      "exit_code": 0,
+      "name": "tool-exporter-patch-lean4export-natlit-parse",
+      "wall_seconds": 0.001
+    },
+    {
+      "exit_code": 0,
+      "name": "tool-comparator-patch-check-comparator-segmented-check",
+      "wall_seconds": 0.001
+    },
+    {
+      "exit_code": 0,
+      "name": "tool-comparator-patch-comparator-segmented-check",
+      "wall_seconds": 0.001
+    },
+    {
+      "exit_code": 0,
+      "name": "build-comparator",
+      "wall_seconds": 8.358
+    },
+    {
+      "exit_code": 0,
+      "name": "build-nattest",
+      "wall_seconds": 4.547
+    },
+    {
+      "exit_code": 0,
+      "name": "nattest",
+      "wall_seconds": 13.734
+    },
+    {
+      "exit_code": 0,
+      "name": "segment-selftest",
+      "wall_seconds": 2.403
+    },
+    {
+      "exit_code": 0,
+      "name": "segment-selftest-deadline",
+      "wall_seconds": 0.122
+    },
+    {
+      "exit_code": 0,
+      "name": "segment-selftest-continue",
+      "wall_seconds": 0.091
+    },
+    {
+      "exit_code": 0,
+      "name": "segment-selftest-parts",
+      "wall_seconds": 0.069
+    },
+    {
+      "exit_code": 0,
+      "name": "tool-nanoda-init",
+      "wall_seconds": 0.002
+    },
+    {
+      "exit_code": 0,
+      "name": "tool-nanoda-fetch",
+      "wall_seconds": 0.147
+    },
+    {
+      "exit_code": 0,
+      "name": "tool-nanoda-checkout",
+      "wall_seconds": 0.005
+    },
+    {
+      "exit_code": 0,
+      "name": "build-nanoda",
+      "wall_seconds": 24.418
+    },
+    {
+      "exit_code": 0,
+      "name": "tool-landrun-init",
+      "wall_seconds": 0.002
+    },
+    {
+      "exit_code": 0,
+      "name": "tool-landrun-fetch",
+      "wall_seconds": 0.14
+    },
+    {
+      "exit_code": 0,
+      "name": "tool-landrun-checkout",
+      "wall_seconds": 0.003
+    },
+    {
+      "exit_code": 0,
+      "name": "build-landrun",
+      "wall_seconds": 7.392
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-mathlib-init",
+      "wall_seconds": 0.002
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-mathlib-fetch",
+      "wall_seconds": 7.298
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-mathlib-checkout",
+      "wall_seconds": 0.47
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-plausible-init",
+      "wall_seconds": 0.002
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-plausible-fetch",
+      "wall_seconds": 0.125
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-plausible-checkout",
+      "wall_seconds": 0.004
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-LeanSearchClient-init",
+      "wall_seconds": 0.002
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-LeanSearchClient-fetch",
+      "wall_seconds": 0.109
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-LeanSearchClient-checkout",
+      "wall_seconds": 0.003
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-importGraph-init",
+      "wall_seconds": 0.002
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-importGraph-fetch",
+      "wall_seconds": 0.125
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-importGraph-checkout",
+      "wall_seconds": 0.006
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-proofwidgets-init",
+      "wall_seconds": 0.002
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-proofwidgets-fetch",
+      "wall_seconds": 0.345
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-proofwidgets-checkout",
+      "wall_seconds": 0.036
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-aesop-init",
+      "wall_seconds": 0.002
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-aesop-fetch",
+      "wall_seconds": 0.204
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-aesop-checkout",
+      "wall_seconds": 0.009
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-Qq-init",
+      "wall_seconds": 0.002
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-Qq-fetch",
+      "wall_seconds": 0.11
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-Qq-checkout",
+      "wall_seconds": 0.003
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-batteries-init",
+      "wall_seconds": 0.002
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-batteries-fetch",
+      "wall_seconds": 0.222
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-batteries-checkout",
+      "wall_seconds": 0.011
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-Cli-init",
+      "wall_seconds": 0.002
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-Cli-fetch",
+      "wall_seconds": 0.117
+    },
+    {
+      "exit_code": 0,
+      "name": "dependency-Cli-checkout",
+      "wall_seconds": 0.003
+    },
+    {
+      "exit_code": 0,
+      "name": "mathlib-cache",
+      "wall_seconds": 39.219
+    },
+    {
+      "exit_code": 0,
+      "name": "cache-hash-metadata",
+      "wall_seconds": 0.302
+    },
+    {
+      "exit_code": 0,
+      "name": "build-lake-adapter",
+      "wall_seconds": 0.115
+    },
+    {
+      "exit_code": 0,
+      "name": "trusted-lake-config",
+      "wall_seconds": 1.735
+    },
+    {
+      "exit_code": 0,
+      "name": "sandbox-preflight",
+      "wall_seconds": 0.021
+    },
+    {
+      "exit_code": 0,
+      "name": "lean-path",
+      "wall_seconds": 0.7
+    },
+    {
+      "exit_code": 0,
+      "name": "sandbox-preflight",
+      "wall_seconds": 0.037
+    },
+    {
+      "exit_code": 0,
+      "name": "kernel-swap-allocate",
+      "wall_seconds": 0.078
+    },
+    {
+      "exit_code": 0,
+      "name": "kernel-swap-permissions",
+      "wall_seconds": 0.007
+    },
+    {
+      "exit_code": 0,
+      "name": "kernel-swap-format",
+      "wall_seconds": 0.025
+    },
+    {
+      "exit_code": 0,
+      "name": "kernel-swap-enable",
+      "wall_seconds": 0.012
+    },
+    {
+      "exit_code": 0,
+      "name": "sandbox-preflight",
+      "wall_seconds": 0.037
+    }
+  ],
+  "test_only": true,
+  "theorem_names": [
+    "Race.bound"
+  ],
+  "theorems": {
+    "Race.bound": {
+      "lean_kernel": "passed",
+      "nanoda_kernel": "incomplete",
+      "reported_axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "timing_group": "shared theorem closure"
+    }
+  },
+  "tool_pins": {
+    "comparator": "d03acab154d269c06e60e4de7e4cc85deebff94b",
+    "comparator_patches": [
+      {
+        "file": "patches/comparator-segmented-check.patch",
+        "sha256": "846681fe965fb680d12d70127c838ede98b9230179d7fa5840852cbd939d4055"
+      }
+    ],
+    "elan_tar_sha256": "42b94d4244e8353142c456ec0e4ca6528fd898a6c604d4059f494e706e431f63",
+    "elan_version": "v4.2.4",
+    "landrun": "811cfff51ceaf3d9843708aa6d22e9b84ccac8b4",
+    "lean4export": "076e8e57707e813375e8f9da8bf989799ace9680",
+    "lean4export_patches": [
+      {
+        "file": "patches/lean4export-pr52-natlit-print.patch",
+        "sha256": "dbcb657d2c0e4bdd7c396d750d55031bff54cb21e82aef8a6f6318ae3b4b76c2"
+      },
+      {
+        "file": "patches/lean4export-natlit-parse.patch",
+        "sha256": "10eb8ba02b8ea82c7a5e9fce3021eb1f80c5095dbc2343fd908eb78ae7ecdcb9"
+      }
+    ],
+    "nanoda": "8de7e0c4ed3052745a7f8725164efd9e76d84c56"
+  },
+  "total_wall_seconds": 9881.09,
+  "unpack": {
+    "bytes": 484293089,
+    "files": 22304,
+    "members": 22362,
+    "sha256": "62683136c5430ded9027d21f3663651a84f1632733ef36fecd3a01cbf3a235c6"
+  },
+  "verification_stage": "final",
+  "verifier_commit": "0ecc86d8f2cf486d2178b51b304f86c49d527c51"
+}
