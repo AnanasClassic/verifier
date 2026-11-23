@@ -103,6 +103,20 @@ It is an operation-count theorem, not a bit-complexity claim.
   when it has room, else on the work disk, outside the submission mounts; receipts record sampled swap
   use separately. This uses the standard free public runner.
   There is no soft memory limit that would force prolonged reclaim.
+- **nanoda threads** (task be5e47b3). The pinned Comparators of `profiles/tools.json` (`d03acab`) and
+  `profiles/tools-v4.35.0.json` (`e3dcf30`) write `"num_threads": 4` into the nanoda config; the patch
+  `patches/comparator-nanoda-threads.patch` (key `comparator_nanoda_patches`, applied in setup) reads
+  `COMPARATOR_NANODA_THREADS` (1, 2 or 3; anything else keeps 4) and prints `nanoda kernel num_threads: N`, so the
+  receipt's `nanoda.log` shows it. `inside.py` sets the variable only from `control/nanoda-threads.txt`, which the
+  controller writes (1 to 4, any other content stops the check). After an `oom-kill` of the nanoda check with the build
+  finished, the check starts again in a new unit with 2, then 1 threads (`NANODA_THREADS`), if the time left is at least the
+  wall time of the killed attempt: each attempt repeats the export and the Lean replay, and a retry that cannot end would
+  hold the queue lease to the deadline. A submission cannot set the count. The profile key `nanoda_threads_start`
+  (4, 2 or 1, a reviewed file) starts lower, for a maintainer smoke run or a board whose nanoda keeps being killed.
+  `nanoda.attempts` records `nanoda_threads` of each attempt; the receipt has the last as `nanoda_threads`. A nanoda unit that
+  dies of memory or time is still incomplete, which never stops Lean Verified. The pins of `anthropic-tools.json` and
+  `tools-v4.33.0-rc2.json` (3SUM, prime gaps, APSP, average sensitivity) write no `num_threads`, so nanoda already runs
+  one worker there. A chain runs no nanoda.
 - The job timeout is **350 minutes**. Verification stops at a 335-minute total
   deadline, leaving time to save artifacts. Tool setup has a 45-minute limit.
   The controller also stops a check if free disk falls below 1 GiB.

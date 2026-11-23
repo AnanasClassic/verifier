@@ -4,5 +4,11 @@
   "landrun": "811cfff51ceaf3d9843708aa6d22e9b84ccac8b4",
   "nanoda": "8de7e0c4ed3052745a7f8725164efd9e76d84c56",
   "elan_version": "v4.2.4",
-  "elan_tar_sha256": "42b94d4244e8353142c456ec0e4ca6528fd898a6c604d4059f494e706e431f63"
+  "elan_tar_sha256": "42b94d4244e8353142c456ec0e4ca6528fd898a6c604d4059f494e706e431f63",
+  "comparator_nanoda_patches": [
+    {
+      "file": "patches/comparator-nanoda-threads.patch",
+      "sha256": "8408bfc82f8c0a24848a140522e88718952d741411e4cd079792d087e8055530"
+    }
+  ]
 }

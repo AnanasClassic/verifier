@@ -26,6 +26,15 @@ if phase.endswith('-exec'):
         raise ValueError('invalid kernel phase')
     env = dict(os.environ, LEAN_NUM_THREADS='4')
     env['PATH'] = str(work / 'control/bin') + ':' + env['PATH']
+    if kernel == 'nanoda':
+        # The nanoda thread count of this attempt (verifier.py NANODA_THREADS), from a file that only the controller writes.
+        # Comparator with patches/comparator-nanoda-threads.patch reads it; an unpatched Comparator ignores it.
+        threads_file = work / 'control/nanoda-threads.txt'
+        if threads_file.exists():
+            threads = threads_file.read_text()
+            if threads not in ['1\n', '2\n', '3\n', '4\n']:
+                raise ValueError('invalid nanoda thread count')
+            env['COMPARATOR_NANODA_THREADS'] = threads.strip()
     if kernel in ['challenge', 'export']:
         # A chain's export job (chain.py): the challenge build and export, in its own unit before any submission
         # build file is restored; then the solution build and export. Each writes one file in /tmp.

@@ -51,12 +51,32 @@ class ToolPinTests(unittest.TestCase):
         profiles/tools.json, and the reviewed Comparator patch. No other tool file patches Comparator."""
         chain = json.loads((v.ROOT / 'profiles/tools-chain.json').read_text())
         patches = chain.pop('comparator_patches')
-        self.assertEqual(chain, json.loads((v.ROOT / 'profiles/tools.json').read_text()))
+        plain = json.loads((v.ROOT / 'profiles/tools.json').read_text())
+        plain.pop('comparator_nanoda_patches')  # a chain runs no nanoda (docs/execution.md), so it needs no thread patch
+        self.assertEqual(chain, plain)
+        self.assertNotIn('comparator_nanoda_patches', chain)
         self.assertEqual([x['file'] for x in patches], ['patches/comparator-segmented-check.patch'])
         for item in patches:
             self.assertEqual(v.digest(v.ROOT / item['file']), item['sha256'], item['file'])
         for name in ['profiles/tools.json', 'profiles/anthropic-tools.json', 'profiles/tools-v4.35.0.json', 'profiles/tools-v4.33.0-rc2.json']:
             self.assertNotIn('comparator_patches', json.loads((v.ROOT / name).read_text()), name)
+
+    def test_the_nanoda_thread_patch_is_pinned_for_the_two_comparators_that_hard_code_four_threads(self):
+        """Task be5e47b3: Comparator d03acab and e3dcf30 (profiles/tools.json, tools-v4.35.0.json) write "num_threads": 4 for
+        nanoda; the patch reads COMPARATOR_NANODA_THREADS. The older Comparator pins (anthropic-tools.json,
+        tools-v4.33.0-rc2.json) write no num_threads, so nanoda runs one worker there already: no patch. It is its own key,
+        because comparator_patches also starts the segmented-check self-test (verifier.setup)."""
+        for name in ['profiles/tools.json', 'profiles/tools-v4.35.0.json']:
+            items = json.loads((v.ROOT / name).read_text())['comparator_nanoda_patches']
+            self.assertEqual([x['file'] for x in items], ['patches/comparator-nanoda-threads.patch'], name)
+            self.assertEqual(v.digest(v.ROOT / items[0]['file']), items[0]['sha256'], name)
+        for name in ['profiles/anthropic-tools.json', 'profiles/tools-v4.33.0-rc2.json', 'profiles/tools-chain.json']:
+            self.assertNotIn('comparator_nanoda_patches', json.loads((v.ROOT / name).read_text()), name)
+        text = (v.ROOT / 'patches/comparator-nanoda-threads.patch').read_text()
+        self.assertEqual((text.count('+      | some "1" => 1'), text.count('-      ("num_threads", 4),')), (1, 1))
+        # The two pinned Main.lean files are the same, so one patch fits both (checked on the clones, 2026-11-23).
+        self.assertEqual(json.loads((v.ROOT / 'profiles/tools.json').read_text())['comparator'], 'd03acab154d269c06e60e4de7e4cc85deebff94b')
+        self.assertEqual(json.loads((v.ROOT / 'profiles/tools-v4.35.0.json').read_text())['comparator'], 'e3dcf3083fc53d44b27a4431fabf7d43181583f5')
 
 
 if __name__ == '__main__':

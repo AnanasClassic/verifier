@@ -14,5 +14,11 @@
       "file": "patches/lean4export-natlit-parse.patch",
       "sha256": "10eb8ba02b8ea82c7a5e9fce3021eb1f80c5095dbc2343fd908eb78ae7ecdcb9"
     }
+  ],
+  "comparator_nanoda_patches": [
+    {
+      "file": "patches/comparator-nanoda-threads.patch",
+      "sha256": "8408bfc82f8c0a24848a140522e88718952d741411e4cd079792d087e8055530"
+    }
   ]
 }

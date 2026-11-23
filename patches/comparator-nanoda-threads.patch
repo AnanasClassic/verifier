@@ -1,0 +1,27 @@
+diff --git a/Main.lean b/Main.lean
+index 8560511..d3f7ba1 100644
+--- a/Main.lean
++++ b/Main.lean
+@@ -156,12 +156,21 @@ def runExternalKernel (kernelName : String) (kernelCommand : Array String)
+   IO.FS.withTempFile fun configHandle configPath => do
+   IO.FS.withTempFile fun solutionHandle solutionPath => do
+     let legalAxioms ← getLegalAxioms
++    -- Big O Speedrun patch (bigospeedrun/verifier, task be5e47b3): the verifier starts nanoda with fewer threads after an
++    -- out-of-memory kill. It sets COMPARATOR_NANODA_THREADS (1, 2 or 3) from a file that only the controller writes.
++    -- Unset, empty or any other value keeps the upstream 4 threads. The count is printed, so the receipt's log shows it.
++    let nanodaThreads : Nat := match (← IO.getEnv "COMPARATOR_NANODA_THREADS") with
++      | some "1" => 1
++      | some "2" => 2
++      | some "3" => 3
++      | _ => 4
++    IO.println s!"{kernelName} kernel num_threads: {nanodaThreads}"
+     configHandle.putStr <| Lean.Json.compress <| Lean.Json.mkObj [
+       ("use_stdin", false),
+       ("export_file_path", solutionPath.toString),
+       ("permitted_axioms", .arr <| legalAxioms.map (.str ∘ Lean.Name.toString)),
+       ("unpermitted_axiom_hard_error", true),
+-      ("num_threads", 4),
++      ("num_threads", nanodaThreads),
+       ("nat_extension", true),
+       ("string_extension", true),
+     ]

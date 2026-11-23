@@ -305,6 +305,9 @@ def prepare():
     if 'lake_workers_start' in profile and (type(profile['lake_workers_start']) is not int
                                             or profile['lake_workers_start'] not in LAKE_WORKERS):
         raise ValueError('lake_workers_start must be one of the Lake worker counts')
+    if 'nanoda_threads_start' in profile and (type(profile['nanoda_threads_start']) is not int
+                                              or profile['nanoda_threads_start'] not in NANODA_THREADS):
+        raise ValueError('nanoda_threads_start must be one of the nanoda thread counts')
     check_chain_profile(profile, request)
     WORK.mkdir(parents=True, exist_ok=False)
     (WORK / 'control').mkdir(); (WORK / 'tools').mkdir()
@@ -516,6 +519,7 @@ def setup():
     clone('https://github.com/leanprover/lean4export.git', pins['lean4export'], exporter, 'tool-exporter')
     apply_exporter_patches(pins, exporter)
     apply_exporter_patches(pins, tools / 'comparator', 'comparator_patches', 'tool-comparator')
+    apply_exporter_patches(pins, tools / 'comparator', 'comparator_nanoda_patches', 'tool-comparator-nanoda')
     for folder in [tools / 'comparator', exporter]:
         (folder / 'lean-toolchain').write_text(request['lean_toolchain'] + '\n')
     command([lean / 'lake', 'build', 'lean4export', 'comparator'], 'build-comparator', tools / 'comparator', env)
@@ -612,6 +616,25 @@ TASKS_MAX = 4096
 # 4214/6130, and again after 124 s when job 2 continued at 4). After an oom-kill during the build, the build
 # continues in a new unit with the next count. Lake keeps each finished module.
 LAKE_WORKERS = (4, 3, 2, 1)
+
+
+# nanoda threads (task be5e47b3, Lead 2026-11-23): Comparator hard-codes 4 threads for nanoda (Main.lean runExternalKernel,
+# "num_threads": 4). With patches/comparator-nanoda-threads.patch it reads COMPARATOR_NANODA_THREADS. After an oom-kill of
+# the nanoda check, with the build finished, the check starts again in a new unit with the next count, as the build does with
+# Lake workers. Every attempt repeats the export and the Lean replay, so a retry starts only when the time left is at least
+# the wall time of the attempt that was killed (a retry that cannot end would hold the queue lease to the deadline). A
+# submission never sets it: the controller writes control/nanoda-threads.txt, outside the submission's writable namespace.
+# Only the Comparator pins with the patch read it (tools.json and tools-v4.35.0.json: key comparator_nanoda_patches); the
+# older pins (anthropic-tools.json, tools-v4.33.0-rc2.json) give nanoda no num_threads, which means one worker already.
+# The profile's nanoda_threads_start (a reviewed file, like lake_workers_start) starts the sequence lower: for a maintainer
+# smoke run, or for a board whose nanoda keeps being killed. Any other value starts at 4.
+NANODA_THREADS = (4, 2, 1)
+
+
+def first_nanoda_threads(data):
+    profile = data.get('profile')
+    start = profile.get('nanoda_threads_start') if isinstance(profile, dict) else None
+    return start if type(start) is int and start in NANODA_THREADS else NANODA_THREADS[0]
 
 
 def first_lake_workers(data):
@@ -823,6 +846,9 @@ def verify(kernels=None):
             # The shim reads the Lake worker count (lake-shim.c). Start at the count of the last build attempt.
             workers = LAKE_WORKERS[LAKE_WORKERS.index(first_lake_workers(data)):]
             attempts, offset = [], 0
+            if kernel == 'nanoda':
+                first_threads = first_nanoda_threads(data)
+                (WORK / 'control/nanoda-threads.txt').write_text(f'{first_threads}\n')
             for jobs in workers:
                 if attempts:
                     subprocess.run(['sudo', 'systemctl', 'reset-failed', 'bos-verifier-' + kernel], check=False,
@@ -836,11 +862,30 @@ def verify(kernels=None):
                 with log.open('rb') as f:
                     f.seek(offset); text = f.read().decode(errors='replace')
                 attempts.append({'lake_jobs': jobs, 'exit_code': code, 'systemd_result': systemd_result,
-                                 'wall_seconds': round(time.monotonic() - start, 3), **usage, 'guard_stop': guard_stop})
+                                 'wall_seconds': round(time.monotonic() - start, 3), **usage, 'guard_stop': guard_stop,
+                                 **({'nanoda_threads': first_threads} if kernel == 'nanoda' else {})})
                 data = receipt(); data['lake_workers'] = jobs; save(data)
                 if (systemd_result != 'oom-kill' or guard_stop or not build_unfinished(text)
                         or jobs == workers[-1] or time.time() >= deadline):
                     break
+            if kernel == 'nanoda':
+                for threads in NANODA_THREADS[NANODA_THREADS.index(first_threads) + 1:]:
+                    if (systemd_result != 'oom-kill' or guard_stop or build_unfinished(text)
+                            or deadline - time.time() < attempts[-1]['wall_seconds']):
+                        break
+                    subprocess.run(['sudo', 'systemctl', 'reset-failed', 'bos-verifier-nanoda'], check=False,
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    with log.open('a') as f:
+                        f.write(f'VERIFIER nanoda: oom-kill, the check starts again with {threads} nanoda threads\n')
+                    offset = log.stat().st_size
+                    (WORK / 'control/nanoda-threads.txt').write_text(f'{threads}\n')
+                    code, systemd_result, guard_stop, start, usage = launch_github(kernel, command_args, deadline, 'a')
+                    with log.open('rb') as f:
+                        f.seek(offset); text = f.read().decode(errors='replace')
+                    attempts.append({'lake_jobs': attempts[-1]['lake_jobs'], 'exit_code': code, 'systemd_result': systemd_result,
+                                     'wall_seconds': round(time.monotonic() - start, 3), **usage, 'guard_stop': guard_stop,
+                                     'nanoda_threads': threads})
+                data = receipt(); data['nanoda_threads'] = attempts[-1]['nanoda_threads']; save(data)
         record = {'systemd_result': systemd_result, 'status': 'passed' if code == 0 else 'not_completed_or_rejected',
                   'exit_code': code, 'wall_seconds': round(time.monotonic() - start, 3),
                   **usage, 'guard_stop': guard_stop, 'log': kernel + '.log'}
@@ -1225,7 +1270,8 @@ def resource_units(data):
     def add(name, value):
         attempts = [a for a in value.get('attempts') or [] if isinstance(a, dict)] if isinstance(value, dict) else []
         if attempts:
-            units.extend((f'{name} attempt {i + 1}' + (f' ({label(a["lake_jobs"])} Lake workers)' if name == 'build' and 'lake_jobs' in a else ''), a)
+            units.extend((f'{name} attempt {i + 1}' + (f' ({label(a["lake_jobs"])} Lake workers)' if name == 'build' and 'lake_jobs' in a else '')
+                          + (f' ({label(a["nanoda_threads"])} nanoda threads)' if name == 'nanoda' and 'nanoda_threads' in a else ''), a)
                          for i, a in enumerate(attempts))
         elif isinstance(value, dict):
             units.append((name, value))

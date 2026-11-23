@@ -195,11 +195,14 @@ class VerifyPinTests(Base):
     def run_verify(self, kernels, outputs):
         """v.verify() with one (log text, systemd result) per launch; returns (unit, Lake workers) per launch and the systemctl calls."""
         launched, runs, outputs = [], [], list(outputs)
+        self.threads = []  # control/nanoda-threads.txt at each launch (None: no file)
         (self.work / 'control/chain-targets.txt').write_text('Submission\n')
 
         def popen(args, stdout=None, stderr=None, **kwargs):
             text, result = outputs.pop(0)
             launched.append((args[4].removeprefix('--unit='), (self.work / 'control/lake-workers.txt').read_text().strip()))
+            threads_file = self.work / 'control/nanoda-threads.txt'
+            self.threads.append(threads_file.read_text().strip() if threads_file.exists() else None)
             runs.append(result); stdout.write(text); stdout.flush()
             return Mock(poll=Mock(return_value=0), wait=Mock(return_value=0 if result == 'success' else 1))
 
@@ -269,6 +272,103 @@ class VerifyPinTests(Base):
         self.assertEqual([c for c in calls if isinstance(c, str) and c.startswith('kernel-swap')],
                          ['kernel-swap-allocate', 'kernel-swap-permissions', 'kernel-swap-format', 'kernel-swap-enable'])
 
+    def test_an_oom_kill_of_nanoda_after_the_build_starts_it_again_with_2_then_1_threads(self):
+        # Task be5e47b3 (Lead, 2026-11-23): 4, then 2, then 1 nanoda threads; the Lake workers stay as they were.
+        done = 'VERIFIER source chain 0: exit=0 seconds=9.000\n'
+        launched, calls = self.run_verify(['nanoda'], [(done, 'oom-kill'), (done, 'oom-kill'), (done + ACCEPT, 'success')])
+        self.assertEqual(launched, [('bos-verifier-nanoda', '4')] * 3)
+        self.assertEqual(self.threads, ['4', '2', '1'])
+        reset = ['sudo', 'systemctl', 'reset-failed', 'bos-verifier-nanoda']
+        self.assertEqual([c for c in calls if c == reset], [reset, reset])
+        nanoda = v.receipt()['kernels']['nanoda']
+        self.assertEqual((nanoda['status'], nanoda['reason']), ('passed', 'comparator_acceptance'))
+        self.assertEqual([(a['nanoda_threads'], a['lake_jobs'], a['systemd_result']) for a in nanoda['attempts']],
+                         [(4, 4, 'oom-kill'), (2, 4, 'oom-kill'), (1, 4, 'success')])
+        self.assertEqual(v.receipt()['nanoda_threads'], 1)
+        log = (self.art / 'nanoda.log').read_text()
+        self.assertIn('VERIFIER nanoda: oom-kill, the check starts again with 2 nanoda threads\n', log)
+        self.assertIn('VERIFIER nanoda: oom-kill, the check starts again with 1 nanoda threads\n', log)
+        self.assertEqual([name for name, _ in v.resource_units(v.receipt()) if name.startswith('nanoda')],
+                         ['nanoda attempt 1 (4 nanoda threads)', 'nanoda attempt 2 (2 nanoda threads)', 'nanoda attempt 3 (1 nanoda threads)'])
+        warnings = v.resource_report(v.receipt())['warnings']
+        self.assertIn('nanoda attempt 2 (2 nanoda threads): out-of-memory kill', warnings)
+        # Still killed at 1 thread: no fourth attempt, and the outcome is the last attempt's own.
+        self.run_verify(['nanoda'], [(done, 'oom-kill')] * 3)
+        self.assertEqual(self.threads, ['4', '2', '1'])
+        self.assertEqual(v.receipt()['kernels']['nanoda']['reason'], 'out_of_memory')
+        # A pass at 4 threads makes no retry, and the file says 4.
+        launched, _ = self.run_verify(['nanoda'], [(done + ACCEPT, 'success')])
+        self.assertEqual((len(launched), self.threads), (1, ['4']))
+
+    def test_the_profile_can_start_nanoda_at_fewer_threads_and_a_bad_value_starts_at_4(self):
+        done = 'VERIFIER source chain 0: exit=0 seconds=9.000\n'
+        for value in [None, 0, 3, 5, '1', True, 1.0]:
+            self.assertEqual(v.first_nanoda_threads({'profile': {'nanoda_threads_start': value}}), 4, repr(value))
+        self.assertEqual(v.first_nanoda_threads({}), 4)
+        for value in [4, 2, 1]:
+            self.assertEqual(v.first_nanoda_threads({'profile': {'nanoda_threads_start': value}}), value)
+        # A smoke run: start at 1; the file says 1 and an oom-kill there is final.
+        data = v.receipt(); data['profile'] = {'nanoda_threads_start': 1}; v.save(data)
+        launched, _ = self.run_verify(['nanoda'], [(done + ACCEPT, 'success')])
+        self.assertEqual((len(launched), self.threads), (1, ['1']))
+        self.assertEqual(v.receipt()['kernels']['nanoda']['attempts'][0]['nanoda_threads'], 1)
+        self.run_verify(['nanoda'], [(done, 'oom-kill')])
+        self.assertEqual(self.threads, ['1'])
+        data = v.receipt(); data['profile'] = {'nanoda_threads_start': 2}; v.save(data)
+        self.run_verify(['nanoda'], [(done, 'oom-kill'), (done, 'oom-kill')])
+        self.assertEqual(self.threads, ['2', '1'])
+
+    def test_no_nanoda_thread_retry_after_another_failure_a_guard_stop_an_unfinished_build_or_too_little_time(self):
+        done = 'VERIFIER source chain 0: exit=0 seconds=9.000\n'
+        # A rejection or a timeout is not an out-of-memory kill.
+        for result in ['exit-code', 'timeout']:
+            self.run_verify(['nanoda'], [(done, result)])
+            self.assertEqual(self.threads, ['4'], result)
+        # An oom-kill while the build is unfinished is the Lake worker loop's: the thread file keeps 4.
+        building = '✔ [10/20] Built Submission.A\n'
+        launched, _ = self.run_verify(['nanoda'], [(building, 'oom-kill'), (building, 'oom-kill'), (building, 'oom-kill'), (building, 'oom-kill')])
+        self.assertEqual((launched, self.threads), ([('bos-verifier-nanoda', n) for n in '4321'], ['4'] * 4))
+        # Time left: a retry needs at least the wall time of the killed attempt (it repeats the export and the Lean replay).
+        data = v.receipt(); data['lake_workers'] = 4; v.save(data)
+        clock = iter(range(0, 10**7, 30000))
+        with patch.object(v.time, 'monotonic', lambda: next(clock)):
+            self.run_verify(['nanoda'], [(done, 'oom-kill'), (done + ACCEPT, 'success')])
+        self.assertEqual(self.threads, ['4'], 'the first attempt took 30000 s, more than the 20100 s that the deadline leaves')
+        self.assertGreater(v.receipt()['kernels']['nanoda']['attempts'][0]['wall_seconds'], 20100)
+        self.assertEqual(v.receipt()['kernels']['nanoda']['reason'], 'out_of_memory')
+
+    def test_inside_passes_the_nanoda_thread_count_only_from_the_controllers_file(self):
+        """scripts/inside.py, phase nanoda-exec, with a fake Comparator that prints its environment."""
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            (work / 'control').mkdir()
+            (work / 'control/request.json').write_text(json.dumps({'request': {'lean_toolchain': 'leanprover/lean4:v4.34.1'}}))
+            fake = work / 'tools/comparator/.lake/build/bin/comparator'
+            fake.parent.mkdir(parents=True)
+            fake.write_text('#!/bin/sh\necho "threads=${COMPARATOR_NANODA_THREADS-unset}"\n'); fake.chmod(0o755)
+
+            def run(phase, text=None, env=None):
+                threads = work / 'control/nanoda-threads.txt'
+                threads.unlink(missing_ok=True)
+                if text is not None:
+                    threads.write_text(text)
+                result = subprocess.run([sys.executable, str(ROOT / 'scripts/inside.py'), str(work), phase], capture_output=True, text=True,
+                                        env=dict(os.environ, **(env or {})))
+                return result.returncode, result.stdout.strip()
+            for count in '1234':
+                self.assertEqual(run('nanoda-exec', count + '\n'), (0, 'threads=' + count))
+            # No file (the Lean check, an older flow): unset, so Comparator keeps its own 4.
+            self.assertEqual(run('nanoda-exec'), (0, 'threads=unset'))
+            self.assertEqual(run('lean-exec', '2\n'), (0, 'threads=unset'))
+            # The file wins over the environment; without a file the environment is not touched (the sandbox starts with an
+            # empty one, sandbox_args, so a submission has no way to set it).
+            self.assertEqual(run('nanoda-exec', '2\n', {'COMPARATOR_NANODA_THREADS': '1'}), (0, 'threads=2'))
+            self.assertEqual(run('nanoda-exec', None, {'COMPARATOR_NANODA_THREADS': '1'}), (0, 'threads=1'))
+            # A bad file stops the check before Comparator starts.
+            for bad in ['0\n', '5\n', '2', '2\n\n', ' 2\n', 'two\n', '']:
+                code, out = run('nanoda-exec', bad)
+                self.assertEqual((code != 0, out), (True, ''), repr(bad))
+
     def test_a_bad_count_from_the_build_record_starts_at_4(self):
         for value in [None, 0, 5, '2', True, 2.0]:
             data = v.receipt(); data.pop('lake_workers', None)
@@ -319,7 +419,7 @@ class SetupPinTests(Base):
              patch.object(v, 'require_runner_image', side_effect=image_check('require-runner-image')), \
              patch.object(v, 'require_bwrap_profile', side_effect=image_check('require-bwrap-profile')), \
              patch.object(v, 'digest', side_effect=lambda p: pins['elan_tar_sha256'] if p.name == 'elan.tar.gz' else
-                          {ROOT / x['file']: x['sha256'] for x in pins['lean4export_patches']}.get(p, 'h')):
+                          {ROOT / x['file']: x['sha256'] for x in pins['lean4export_patches'] + pins['comparator_nanoda_patches']}.get(p, 'h')):
             v.setup()
         W, T, L = str(self.work), str(self.work / 'tools'), str(lean)
         env = {'ELAN_HOME': f'{T}/elan', 'LEAN_NUM_THREADS': '4'}
@@ -342,6 +442,9 @@ class SetupPinTests(Base):
             *[step for name in ['lean4export-pr52-natlit-print', 'lean4export-natlit-parse'] for step in [
                 ('tool-exporter-patch-check-' + name, ['git', '-C', f'{T}/comparator/.lake/packages/lean4export', 'apply', '--check', str(ROOT / f'patches/{name}.patch')], None, {}),
                 ('tool-exporter-patch-' + name, ['git', '-C', f'{T}/comparator/.lake/packages/lean4export', 'apply', str(ROOT / f'patches/{name}.patch')], None, {})]],
+            # Task be5e47b3: the nanoda thread patch on Comparator. Its own key: the segmented-check self-test stays off.
+            ('tool-comparator-nanoda-patch-check-comparator-nanoda-threads', ['git', '-C', f'{T}/comparator', 'apply', '--check', str(ROOT / 'patches/comparator-nanoda-threads.patch')], None, {}),
+            ('tool-comparator-nanoda-patch-comparator-nanoda-threads', ['git', '-C', f'{T}/comparator', 'apply', str(ROOT / 'patches/comparator-nanoda-threads.patch')], None, {}),
             ('build-comparator', [f'{L}/lake', 'build', 'lean4export', 'comparator'], f'{T}/comparator', built),
             ('build-nattest', [f'{L}/lake', 'build', 'nattest'], f'{T}/nattest', built),
             ('nattest', [f'{T}/nattest/.lake/build/bin/nattest'], f'{T}/nattest', built),
