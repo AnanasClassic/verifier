@@ -113,14 +113,19 @@ It is an operation-count theorem, not a bit-complexity claim.
 ## Split build for large proofs
 
 A profile with `"runner": "github-split"` runs in two hosted jobs of one
-workflow run. Today `3sum`, `directed-sssp` and `dft` have it (and `prime-gaps`). DFT runs split since task 8e55f343: verifier#208 (run 45012852925) built 771 chain targets one after the other in one job, 259 minutes with about 10 seconds of Lake start-up per call, and the 335-minute deadline killed the Lean unit before the export and the kernel replay. Directed shortest paths run split since task 4be721f7: in one job the Comparator unit built the pinned fork (`Frontier`, about 2,000 Lake jobs) inside the 14 GiB unit and peaked at 14.2 GB (94%) for 54-62 min; split (branch test, run 44929651659) the build job takes 26 min and the Lean check job peaks at 3.0 GB for 8 min. Catalan opened on 2026-10-27, after
+workflow run. Today `3sum`, `directed-sssp` and `dft` have it (and `prime-gaps`). DFT runs split since task 8e55f343: verifier#208 (run 45012852925) built 771 chain targets one after the other in one job, 259 minutes (median 17.6 s per target, shortest 1.3 s: the cost is compile time, not Lake start-up), and the 335-minute deadline killed the Lean unit before the export and the kernel replay. Directed shortest paths run split since task 4be721f7: in one job the Comparator unit built the pinned fork (`Frontier`, about 2,000 Lake jobs) inside the 14 GiB unit and peaked at 14.2 GB (94%) for 54-62 min; split (branch test, run 44929651659) the build job takes 26 min and the Lean check job peaks at 3.0 GB for 8 min. Catalan opened on 2026-10-27, after
 the maintainer smoke below passed (run 40497685416, issue #68). 3SUM issues run split
 since 2026-11-02: issue #99 compiled one module at a time for 5 h 16 min in one job
 and ran out of time (run 41393097953). Each job has the 350-minute job timeout and its
 own 335-minute deadline from its own `prepare`. Both issue jobs set `BOS_SPLIT`
 from the matrix entry; their unit-test steps clear it, and the suite also passes with
 `BOS_SPLIT=true` (rerun 41494392206 of #99 failed there). The PR route has no
-build job and never splits: a 3SUM PR runs as one job, as before, and keeps the chain build. A Catalan PR starts no job
+build job and never splits: a 3SUM PR runs as one job, as before, and keeps the chain build. The chain targets build one after the other, so a PR tree
+is bounded by its compile seconds plus its kernel and nanoda seconds, not by a count. The PR file limit (500 files)
+keeps a tree under a third of #208 (1,551 files). Measured: PR #209 (`dft`, 42 files, 16 chain targets, run
+45079620824) took 2,436 s in one job: the Lean unit 1,394 s (chain targets 747 s) and nanoda 820 s, peaks 4.5 GB and
+9.5 GB. A PR that does not fit the 335-minute deadline stays open with `verification-needs-review`; no verdict is lost.
+Add a build job to the PR route only when a real PR times out. A Catalan PR starts no job
 (the PR route admits only `dft`, `3sum` and `apsp` folders).
 
 1. Job `build` (`contents: read`, `issues: read`, no secrets) runs the same
